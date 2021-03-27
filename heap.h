@@ -14,26 +14,83 @@ public:
   // is through the constructor of the variable "heap" which is called by default
 
   // return the minimum element in the heap
-  HeapItem<T, K> min() const;
+  HeapItem<T, K> min() const {
+   return heap[0];
+  }
 
   // insert an item with the given key
   // if the item is already in the heap, will still insert a new copy with this key
-  void insert(const T& item, const K& key);
+  void insert(const T& item, const K& key){
+    HeapItem<T, K> next;
+    next.item = item;
+    next.key = key;
+    heap.push_back(next);
+    int end = size() - 1;
+    fixHeapUp(end);
+  }
 
   // pop the minimum item from the heap
-  void popMin();
+// CAN I ASSUME THAT IT ISN"T EMPTY??
+  void popMin() {
+    // swap the items and keys at the last vertex of the heap and the root
+    HeapItem<T, K> temp;
+    temp = heap[0];
+    int end = size() - 1;
+    heap[0] = heap[end];
+    heap[end] = temp;
+    // pop the last item and key in the heap
+    heap.pop_back();
+    // need to fix as the heap property may be violated
+    fixHeapUp(0); 
+  }
 
   // returns the number of items held in the heap
-  int size() const;
+  int size() const {
+    return heap.size();
+  }
 
 private:
   // the array holding the heap
   std::vector< HeapItem<T, K> > heap;
 
-  //  will fix the heap property at index i and recurse with its parent
-  void fixHeapUp(int i);
+  // will fix the heap property at index i and recurse with its parent
+  void fixHeapUp(int i) {
+    while ((i-1)/2 > 0) {
+      // check if 
+      if (heap[i].key < heap[(i-1)/2].key) {
+        // swap child and parent
+        HeapItem<T, K> temp = heap[(i-1)/2];
+        heap[(i-1)/2] = heap[i];
+        heap[i] = temp;
+      }
+      i = (i-1)/2;
+    }
+  }
 
   // will fix the heap property at index i and recurse with the child
   // that received i's item (if appropriate)
-  void fixHeapDown(int i);
+  void fixHeapDown(int i) {
+    // while there is at least a left child
+    while (i*2+1 <= size()-1) {
+      int index = minChild(i*2+1);
+      // check if parent key is greater than min child key
+      if (heap[i].key > heap[index].key) {
+        // swap child and parent
+        HeapItem<T, K> temp = heap[index];
+        heap[index] = heap[i];
+        heap[i] = temp;
+      }
+    }
+  }
+
+  int minChild(int k){
+    // check if the right child exists
+    if (k+1 <= size()-1) {
+      if (heap[k].key > heap[k+1].key) {
+        return k+1;
+      } 
+    }
+    return k;
+  }
+
 };
