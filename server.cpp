@@ -6,7 +6,7 @@
 #include <unordered_map>
 using namespace std;
 
-typedef pair<int, int> PII; // aliases or symbolic name of an existing type 
+typedef pair<int, int> PII;
 typedef pair<int, long long> PIL;
 
 struct Point {
@@ -25,14 +25,90 @@ int main() {
     unordered_map<int, Point> points;
     unordered_map<int, PIL> tree;
     readGraph("edmonton-roads-2.0.1.txt", graph, points);
-    // cout << graph.getCost(654589385, 354272311) << endl;
+
+    // cout << graph.getCost(620818227, 251365277) << endl;
     dijkstra(graph, 29770958, tree);
     /*for (auto elem : tree) {
         cout << elem.second.second << endl;
     } */
+
+    string line;
+    getline(cin, line);
+    //size_t comma0 = line.find(" ");
+    size_t space1 = line.find(" ", 2);
+    size_t space2 = line.find(" ", space1 + 1);
+    size_t space3 = line.find_last_of(" ");
+    long long lat1 = stoll(line.substr(2, space1 - 2));
+    long long lon1 = stoll(line.substr(space1 + 1, space2 - space1 - 1));
+    long long lat2 = stoll(line.substr(space2 + 1, space3 - space2 - 1));
+    long long lon2 = stoll(line.substr(space3 + 1));
+
+    Point startPoint = {lat1, lon1};
+    Point endPoint = {lat2, lon2};
+    int startID, endID;
+    bool startFound = false;
+    bool endFound = false;
+    int sMin = 2000000000;
+    int eMin = 2000000000;
+    for (auto elem : points) {
+        if (elem.second.lat == lat1 && elem.second.lon == lon1) {
+            startID = elem.first;
+            startFound = true;
+        } else if (!startFound) {
+            int dist = manhattan(elem.second, startPoint);
+            if (dist < sMin) {
+                sMin = dist;
+                startID = elem.first;
+            }
+        }
+
+        if (elem.second.lat == lat2 && elem.second.lon == lon2) {
+            endID = elem.first;
+            endFound = true;
+        } else if (!endFound) {
+            int dist = manhattan(elem.second, endPoint);
+            if (dist < eMin) {
+                eMin = dist;
+                endID = elem.first;
+            }
+        }
+    }
+    cout << startID << endl;
+    cout << endID << endl;
+    dijkstra(graph, startID, tree);
+    vector <int> waypoints; 
+    if (tree.find(endID) == tree.end()) {
+        cout << "N 0" << endl;
+        return 0;
+    }
+
+    for (auto elem : tree) {
+        if (elem.first != endID) {
+            waypoints.push_back(elem.first);
+        } else {
+            break;
+        }
+    }
+
+    cout << "N " << waypoints.size() << endl;
+
+    int count = 0;
+    while (getline(cin, line)){
+        if (line.empty()) {
+            break;
+        }
+        if (count < waypoints.size()){
+            cout << "W " << points.at(waypoints[count]).lat << " ";
+            cout << points.at(waypoints[count]).lon << endl;
+        } else {
+            cout << "E" << endl;
+            break;
+        }
+        count++;
+    }
+
     return 0;
 }
-
 
 void readGraph(string filename, WDigraph& graph, 
     unordered_map<int, Point>& points) {
@@ -62,7 +138,6 @@ void readGraph(string filename, WDigraph& graph,
             pt1.lat = static_cast < long long > (coord1 * 100000);
             pt1.lon = static_cast < long long > (coord2 * 100000);
             points[stoi(id)] = pt1; 
-
         } else if (task == "E") {
             string id2 = line.substr(comma1 + 1, comma2 - comma1 - 1);
             // add edge going both ways to create an undirected graph
@@ -70,7 +145,7 @@ void readGraph(string filename, WDigraph& graph,
             Point pt2 = points.at(stoi(id2));
             long long cost = manhattan(pt1, pt2);
             graph.addEdge(stoi(id), stoi(id2), cost);
-            graph.addEdge(stoi(id2), stoi(id), cost);
+            //graph.addEdge(stoi(id2), stoi(id), cost);
         }
     }
 }
@@ -81,7 +156,7 @@ long long manhattan(const Point& pt1, const Point& pt2) {
     long long x1 = pt1.lat;
     long long x2 = pt2.lat;
     long long y1 = pt1.lon;
-    long long y2 = pt1.lon;
+    long long y2 = pt2.lon;
     long long delta_x = 0;
     long long delta_y = 0;
     long long cost_sum = 0;
@@ -96,11 +171,10 @@ void dijkstra(const WDigraph& graph, int startVertex, unordered_map<int, PIL>& t
     //creating a binary heap to store the points being explored
     BinaryHeap <PII, long long> StoringPoints;
     
-    
     // no "predecessor" of the startVertex 
-    /* the long long is the cost, so the key sessentially is 
-    the predeccsoor and the cost while the item is the vertex*/
-    //putting in the root node
+    /* the long long is the cost, so the key essentially is 
+    the predecessor and the cost while the item is the vertex*/
+    // putting in the root node
     StoringPoints.insert(PII(startVertex, -1), 0);
     
     while (StoringPoints.size() != 0) {
@@ -129,7 +203,7 @@ void dijkstra(const WDigraph& graph, int startVertex, unordered_map<int, PIL>& t
         for (auto iter = graph.neighbours(first_point); iter != graph.endIterator(first_point); iter++) {
             int nbr = *iter; 
             long long waypoints_cost = dist + graph.getCost(first_point, nbr); //current time is d and then we take the cost of the edge and add that 
-            StoringPoints.insert(PII(nbr,first_point), waypoints_cost); // pssing in the neghobur, v is the beginning of the edge and nbr is the end of the edge 
+            StoringPoints.insert(PII(nbr,first_point), waypoints_cost); // pssing in the neighbour, v is the beginning of the edge and nbr is the end of the edge 
             // and we are also passing in the cost 
         }
     }
