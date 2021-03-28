@@ -4,6 +4,7 @@
 #include "dijkstra.h"
 #include "math.h"
 #include "heap.h"
+#include <algorithm>
 #include <unordered_map>
 using namespace std;
 
@@ -19,12 +20,13 @@ long long manhattan(const Point& pt1, const Point& pt2);
 void readGraph(string filename, WDigraph& graph, 
     unordered_map<int, Point>& points);
 
+// MAIN IS GETTING FULL - ADD AT LEAST ONE MORE FUNCTION
 int main() {
     WDigraph graph;
     unordered_map<int, Point> points;
     unordered_map<int, PIL> tree;
     readGraph("edmonton-roads-2.0.1.txt", graph, points);
-
+    //readGraph("test.txt", graph, points);
     // cout << graph.getCost(620818227, 251365277) << endl;
     /*for (auto elem : tree) {
         cout << elem.second.second << endl;
@@ -43,27 +45,28 @@ int main() {
 
     Point startPoint = {lat1, lon1};
     Point endPoint = {lat2, lon2};
+
     int startID, endID;
-    bool startFound = false;
-    bool endFound = false;
     int sMin = 2000000000;
     int eMin = 2000000000;
     for (auto elem : points) {
-        if (elem.second.lat == lat1 && elem.second.lon == lon1) {
+        if (elem.second.lat == startPoint.lat && elem.second.lon == startPoint.lon) {
             startID = elem.first;
-            startFound = true;
-        } else if (!startFound) {
+            break;
+        } else {
             int dist = manhattan(elem.second, startPoint);
             if (dist < sMin) {
                 sMin = dist;
                 startID = elem.first;
             }
         }
+    }
 
-        if (elem.second.lat == lat2 && elem.second.lon == lon2) {
+    for (auto elem : points) {
+        if (elem.second.lat == endPoint.lat && elem.second.lon == endPoint.lon) {
             endID = elem.first;
-            endFound = true;
-        } else if (!endFound) {
+            break;
+        } else {
             int dist = manhattan(elem.second, endPoint);
             if (dist < eMin) {
                 eMin = dist;
@@ -71,7 +74,7 @@ int main() {
             }
         }
     }
-
+    cout << endID << endl;
     dijkstra(graph, startID, tree);
     vector <int> waypoints; 
     if (tree.find(endID) == tree.end()) {
@@ -79,14 +82,14 @@ int main() {
         return 0;
     }
 
-    for (auto elem : tree) {
-        if (elem.first != endID) {
-            waypoints.push_back(elem.first);
-        } else {
-            break;
-        }
+    int curr = endID;
+    cout << "cost " << tree[curr].second << endl;
+    while (curr != startID) {
+        waypoints.push_back(curr);
+        curr = tree[curr].first;
     }
-
+    waypoints.push_back(startID);
+    reverse(waypoints.begin(), waypoints.end());
     cout << "N " << waypoints.size() << endl;
 
     int count = 0;
@@ -142,7 +145,7 @@ void readGraph(string filename, WDigraph& graph,
             Point pt2 = points.at(stoi(id2));
             long long cost = manhattan(pt1, pt2);
             graph.addEdge(stoi(id), stoi(id2), cost);
-            //graph.addEdge(stoi(id2), stoi(id), cost);
+            graph.addEdge(stoi(id2), stoi(id), cost);
         }
     }
 }
