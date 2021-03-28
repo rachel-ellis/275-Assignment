@@ -41,7 +41,7 @@ public:
     // pop the last item and key in the heap
     heap.pop_back();
     // need to fix as the heap property may be violated
-    fixHeapUp(0); 
+    fixHeapDown(0); 
   }
 
   // returns the number of items held in the heap
@@ -55,15 +55,17 @@ private:
 
   // will fix the heap property at index i and recurse with its parent
   void fixHeapUp(int i) {
-    while ((i-1)/2 > 0) {
-      // check if 
-      if (heap[i].key < heap[(i-1)/2].key) {
-        // swap child and parent
-        HeapItem<T, K> temp = heap[(i-1)/2];
-        heap[(i-1)/2] = heap[i];
-        heap[i] = temp;
+    // check if child is less than parent
+    while (heap[i].key < heap[(i-1)/2].key) {  
+      // swap child and parent
+      HeapItem<T, K> temp = heap[(i-1)/2];
+      heap[(i-1)/2] = heap[i];
+      heap[i] = temp;
+      if ((i-1)/2 > 0) {
+        fixHeapUp((i-1)/2);
+      } else {
+        break;
       }
-      i = (i-1)/2;
     }
   }
 
@@ -71,7 +73,7 @@ private:
   // that received i's item (if appropriate)
   void fixHeapDown(int i) {
     // while there is at least a left child
-    while (i*2+1 <= size()-1) {
+    while (i*2+1 < size()) {
       int index = minChild(i*2+1);
       // check if parent key is greater than min child key
       if (heap[i].key > heap[index].key) {
@@ -79,13 +81,14 @@ private:
         HeapItem<T, K> temp = heap[index];
         heap[index] = heap[i];
         heap[i] = temp;
-      }
+      } 
+      i = index;
     }
   }
 
   int minChild(int k){
     // check if the right child exists
-    if (k+1 <= size()-1) {
+    if (k+1 < size()) {
       if (heap[k].key > heap[k+1].key) {
         return k+1;
       } 
