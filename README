@@ -1,0 +1,33 @@
+Name: Anushka Khare and Rachel Ellis
+ID: 1617774  and 1618966
+CMPUT 275 WInter 2021
+Assignment 1 — Trivial Navigation System
+
+
+We did the Assignment with some help from TAs during office hours but other than that we received no other help.
+
+Included Files :
+Makefile 
+README
+digraph.h
+edmonton-roads-2.0.1.txt
+digraph.cpp
+server.cpp
+heap.h
+dijkstra.cpp
+dijkstra.h
+
+
+
+Makefile Targets:
+- make server: Builds the project. And directs the data from the edmonton-roads-2.0.1.txt to make the graph. 
+- make clean : Removes all object files and executables .
+
+Running Instructions :
+1. Call make server from the terimal if running the file for the first time. As specifed in the assignment description, the input requests are specified in the  test00-input.txt file and the output must be redirected to the mysol.txt. The user must call the excutable ./server and then using proper pipleline to recieve input from the appropriate input file and redirect the output to appropriate out file.
+2. otherwise start by calling make clean and then make all after that all files and 
+executables should be called by the Makefile
+
+
+Notes and Assumptions : 
+The zip file contains Makefile, README, digraph.h, edmonton-roads-2.0.1.txt, digraph.cpp, server.cpp, heap.h, dijkstra.cpp, dijkstra.h. The digraph.h, dijkstra.h and the edmonton-roads-2.0.1.txt files were unmodified. In the server.cpp file the readGraph and dijkstra functions were implemented. The readGraph method input is read in and loaded into. The vertices id is lined with the longitude and latitude. An object of Wdiagraph is created by this fucntion so that the cost associated, in this case the groah created is also a directed graph. The vertex coordinates assigned will also be stored in a hash table. Futhermore the cost function is also implemented int he server.cpp it calcultes the cost of a certian edge which will be the sum of hoizontal and vetical distances between two points. In dijkstra.cpp we implemented the dijkstra function function which calulated the path with the least cost from a given start to a given end point. This was done in a time efficent manner by using heap functions to find the next waypoint with the most cost efficient edge associated with it. Lastly, in heap.h we implemented binary heap functions such as popMin, insert, size. Also we implmented the private fucntions such as fixHeapUp and fixHeapDown in present in heap.h. To ensure that the purpose of the assignment was accomplished we then implemented the main fucntion in the server.cpp and appropriately called the functions listed above. This program assumes that the input user will correctly call the Makefile targets as listed above and will clear the object files prior to every execution. Futhermore, when presented with input points that are  not present on the edmonton graph, we have implemented the manhantan function to calculate the closest point to the given point and assumed that to be the vertex. 
