@@ -74,7 +74,7 @@ int main() {
             }
         }
     }
-    cout << endID << endl;
+
     dijkstra(graph, startID, tree);
     vector <int> waypoints; 
     if (tree.find(endID) == tree.end()) {
@@ -83,7 +83,6 @@ int main() {
     }
 
     int curr = endID;
-    cout << "cost " << tree[curr].second << endl;
     while (curr != startID) {
         waypoints.push_back(curr);
         curr = tree[curr].first;
@@ -145,7 +144,6 @@ void readGraph(string filename, WDigraph& graph,
             Point pt2 = points.at(stoi(id2));
             long long cost = manhattan(pt1, pt2);
             graph.addEdge(stoi(id), stoi(id2), cost);
-            graph.addEdge(stoi(id2), stoi(id), cost);
         }
     }
 }
