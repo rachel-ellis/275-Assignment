@@ -19,7 +19,7 @@ dijkstra.h
 
 
 Makefile Targets:
-- make server: Builds the project. And directs the data from the edmonton-roads-2.0.1.txt to make the graph. 
+- make server: Builds the project. 
 - make clean: Removes all object files and executables
 
 Running Instructions:

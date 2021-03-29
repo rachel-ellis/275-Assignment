@@ -27,6 +27,8 @@ struct Point {
 long long manhattan(const Point& pt1, const Point& pt2);
 void readGraph(string filename, WDigraph& graph, 
     unordered_map<int, Point>& points);
+void findVertex(const Point& pt1, const Point& pt2, 
+    unordered_map<int, Point>& points, int& startID, int& endID);
 
 // MAIN IS GETTING FULL - ADD AT LEAST ONE MORE FUNCTION
 int main() {
@@ -49,45 +51,8 @@ int main() {
 
     Point startPoint = {lat1, lon1};
     Point endPoint = {lat2, lon2};
-
-    // loop to find the vertex that either matches or is closest to the  inputted start point
     int startID, endID;
-    int sMin = 2000000000;
-    for (auto elem : points) {
-        // check if start point equals vertex
-        if (elem.second.lat == startPoint.lat && elem.second.lon == startPoint.lon) {
-            startID = elem.first;
-            // if so, break since startID was found
-            break;
-        } else {
-            // compute the cost between the vertex and the startPoint
-            // compare this with the current minimum to find the closest point
-            int dist = manhattan(elem.second, startPoint);
-            if (dist < sMin) {
-                sMin = dist;
-                startID = elem.first;
-            }
-        }
-    }
-
-    // loop to find the vertex that either matches or is closest to the  inputted endpoint
-    int eMin = 2000000000;
-    for (auto elem : points) {
-        // check if end point equals vertex
-        if (elem.second.lat == endPoint.lat && elem.second.lon == endPoint.lon) {
-            endID = elem.first;
-             // if so, break since endID was found
-            break;
-        } else {
-            // compute the cost between the vertex and the startPoint
-            // compare this with the current minimum to find the closest point
-            int dist = manhattan(elem.second, endPoint);
-            if (dist < eMin) {
-                eMin = dist;
-                endID = elem.first;
-            }
-        }
-    }
+    findVertex(startPoint, endPoint, points, startID, endID);
 
     // call dijkstra to get a tree of the reachable nodes in order 
     // starting with the vertex closest to the input start point
@@ -181,9 +146,50 @@ long long manhattan(const Point& pt1, const Point& pt2) {
     long long y2 = pt2.lon;
     long long delta_x = 0;
     long long delta_y = 0;
-    long long cost_sum = 0;
+    long long cost = 0;
     delta_x = abs(x1 - x2);
     delta_y = abs(y1 - y2);
     cost = delta_x + delta_y;
     return cost;
+}
+
+void findVertex(const Point& pt1, const Point& pt2, 
+    unordered_map<int, Point>& points, int& startID, int& endID) {
+    // loop to find the vertex that either matches or is closest to the  inputted start point
+    int min = 2000000000;
+    for (auto elem : points) {
+        // check if start point equals vertex
+        if (elem.second.lat == pt1.lat && elem.second.lon == pt1.lon) {
+            startID = elem.first;
+            // if so, break since startID was found
+            break;
+        } else {
+            // compute the cost between the vertex and the startPoint
+            // compare this with the current minimum to find the closest point
+            int dist = manhattan(elem.second, pt1);
+            if (dist < min) {
+                min = dist;
+                startID = elem.first;
+            }
+        }
+    }
+
+    // loop to find the vertex that either matches or is closest to the  inputted endpoint
+    min = 2000000000; // reset min value to extremely large number
+    for (auto elem : points) {
+        // check if end point equals vertex
+        if (elem.second.lat == pt2.lat && elem.second.lon == pt2.lon) {
+            endID = elem.first;
+             // if so, break since endID was found
+            break;
+        } else {
+            // compute the cost between the vertex and the startPoint
+            // compare this with the current minimum to find the closest point
+            int dist = manhattan(elem.second, pt2);
+            if (dist < min) {
+                min = dist;
+                endID = elem.first;
+            }
+        }
+    }
 }
