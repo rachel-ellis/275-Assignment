@@ -30,7 +30,6 @@ void readGraph(string filename, WDigraph& graph,
 void findVertex(const Point& pt1, const Point& pt2, 
     unordered_map<int, Point>& points, int& startID, int& endID);
 
-// MAIN IS GETTING FULL - ADD AT LEAST ONE MORE FUNCTION
 int main() {
     WDigraph graph;
     unordered_map<int, Point> points;

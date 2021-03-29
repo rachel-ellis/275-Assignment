@@ -1,12 +1,10 @@
 # -----------------------------------
-#    Name: Anushka Khare and Rachel Ellis
-#    ID: 1617774  and 1618966
-#    CMPUT 275
+#  Name: Anushka Khare and Rachel Ellis
+#  ID: 1617774  and 1618966
+#  CMPUT 275
 # 
 #  Assignment — Trivial Navigation System
 # #------------------------------------
-
-all: server
 
 server: digraph.o dijkstra.o server.o
 	g++ -o server digraph.o dijkstra.o server.o

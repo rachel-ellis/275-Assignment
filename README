@@ -7,24 +7,26 @@ Assignment 1 — Trivial Navigation System
 We did the Assignment with some help from TAs during office hours but other than that we received no other help.
 
 Included Files:
-Makefile 
-README
-digraph.h
-digraph.cpp
-server.cpp
-heap.h
-dijkstra.cpp
-dijkstra.h
-
+	Makefile 
+	README
+	digraph.h
+	digraph.cpp
+	server.cpp
+	heap.h
+	dijkstra.cpp
+	dijkstra.h
 
 
 Makefile Targets:
-- make server: Builds the project. 
+- make server: Builds the project
+- make server.o: Compiles the object for server.cpp
+- make dijkstra.o: Compiles the object for dijkstra.cpp
+- make digraph.o: Compiles the object for digraph.cpp
 - make clean: Removes all object files and executables
 
 Running Instructions:
-	1. Call make server from the terimal if running the file for the first time. As specifed in the assignment description, the input requests are specified in the test00-input.txt file and the output must be redirected to the mysol.txt. The user must call the excutable ./server and then using proper pipleline to recieve input from the appropriate input file and redirect the output to appropriate output file.
-	2. otherwise start by calling make clean and then make all after that all files and executables should be called by the Makefile
+	1. Write make server (or just make since it is the main target) in the terimal to compile this program into the exectuable 'server'. The user can choose to call the excutable and then use the proper pipleline to receive input from the appropriate input file and redirect the output to appropriate output file instead of just entering/getting input and output directly in the terminal.
+	2. Call make clean to remove all object files and the executable
 
 
 Notes and Assumptions: 
@@ -37,4 +39,4 @@ Notes and Assumptions:
 
 	To ensure that the purpose of the assignment was accomplished we then implemented the main fucntion in the server.cpp and appropriately called the functions listed above. This program assumes that the input user will correctly call the Makefile targets as listed above and will clear the object files prior to every execution. Futhermore, when presented with input points that are  not present on the edmonton graph, we have implemented the manhantan function to calculate the closest vertex to the given point. 
 
-	In heap.h we also assume that the user will not call min or minPop on an empty binary heap.
+	In heap.h we also assume that the user will not call min or minPop on an empty binary heap. We also assumed that the user will provide input in the specified way (eg. single spaces between different values on a line to make parsing easier).
