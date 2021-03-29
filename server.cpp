@@ -33,16 +33,12 @@ int main() {
     WDigraph graph;
     unordered_map<int, Point> points;
     unordered_map<int, PIL> tree;
+    // create the graph using the info in the given file
     readGraph("edmonton-roads-2.0.1.txt", graph, points);
-    //readGraph("test.txt", graph, points);
-    // cout << graph.getCost(620818227, 251365277) << endl;
-    /*for (auto elem : tree) {
-        cout << elem.second.second << endl;
-    } */
 
+    // handle inputted start and end points
     string line;
     getline(cin, line);
-    //size_t comma0 = line.find(" ");
     size_t space1 = line.find(" ", 2);
     size_t space2 = line.find(" ", space1 + 1);
     size_t space3 = line.find_last_of(" ");
@@ -54,14 +50,18 @@ int main() {
     Point startPoint = {lat1, lon1};
     Point endPoint = {lat2, lon2};
 
+    // loop to find the vertex that either matches or is closest to the  inputted start point
     int startID, endID;
     int sMin = 2000000000;
-    int eMin = 2000000000;
     for (auto elem : points) {
+        // check if start point equals vertex
         if (elem.second.lat == startPoint.lat && elem.second.lon == startPoint.lon) {
             startID = elem.first;
+            // if so, break since startID was found
             break;
         } else {
+            // compute the cost between the vertex and the startPoint
+            // compare this with the current minimum to find the closest point
             int dist = manhattan(elem.second, startPoint);
             if (dist < sMin) {
                 sMin = dist;
@@ -70,11 +70,17 @@ int main() {
         }
     }
 
+    // loop to find the vertex that either matches or is closest to the  inputted endpoint
+    int eMin = 2000000000;
     for (auto elem : points) {
+        // check if end point equals vertex
         if (elem.second.lat == endPoint.lat && elem.second.lon == endPoint.lon) {
             endID = elem.first;
+             // if so, break since endID was found
             break;
         } else {
+            // compute the cost between the vertex and the startPoint
+            // compare this with the current minimum to find the closest point
             int dist = manhattan(elem.second, endPoint);
             if (dist < eMin) {
                 eMin = dist;
@@ -83,22 +89,31 @@ int main() {
         }
     }
 
+    // call dijkstra to get a tree of the reachable nodes in order 
+    // starting with the vertex closest to the input start point
     dijkstra(graph, startID, tree);
     vector <int> waypoints; 
+    // no path is possible if the vertex closest to the end point
+    // is not in the reachable tree map
     if (tree.find(endID) == tree.end()) {
         cout << "N 0" << endl;
         return 0;
     }
 
+    // go through the tree map and add the vertices along the way
+    // to the waypoints vector to get the complete path from end to start
     int curr = endID;
     while (curr != startID) {
         waypoints.push_back(curr);
         curr = tree[curr].first;
     }
+    // add initial vertex ID and reverse waypoints for easier outputting
     waypoints.push_back(startID);
     reverse(waypoints.begin(), waypoints.end());
     cout << "N " << waypoints.size() << endl;
 
+    // print out the waypoints individually upon request from start to end
+    // break loop if the input line is empty
     int count = 0;
     while (getline(cin, line)){
         if (line.empty()) {
@@ -156,9 +171,10 @@ void readGraph(string filename, WDigraph& graph,
     }
 }
 
-long long manhattan(const Point& pt1, const Point& pt2) {
     // Return the Manhattan distance between the two given points
     // two point structure objects of are being passed in called 
+long long manhattan(const Point& pt1, const Point& pt2) {
+    // calculate and return the cost using the formula for manhattan distance
     long long x1 = pt1.lat;
     long long x2 = pt2.lat;
     long long y1 = pt1.lon;
@@ -168,6 +184,6 @@ long long manhattan(const Point& pt1, const Point& pt2) {
     long long cost_sum = 0;
     delta_x = abs(x1 - x2);
     delta_y = abs(y1 - y2);
-    cost_sum = delta_x + delta_y;
-    return cost_sum;
+    cost = delta_x + delta_y;
+    return cost;
 }

@@ -32,8 +32,10 @@ public:
     HeapItem<T, K> next;
     next.item = item;
     next.key = key;
+    // insert element by adding the item and key to heap vector
     heap.push_back(next);
     int end = size() - 1;
+    // need to fix as the heap property may be violated from the end up
     fixHeapUp(end);
   }
 
@@ -68,6 +70,7 @@ private:
       HeapItem<T, K> temp = heap[(i-1)/2];
       heap[(i-1)/2] = heap[i];
       heap[i] = temp;
+      // if the current node has a parent, call fixHeapUp on the parent
       if ((i-1)/2 > 0) {
         fixHeapUp((i-1)/2);
       } else {
@@ -79,7 +82,7 @@ private:
   // will fix the heap property at index i and recurse with the child
   // that received i's item (if appropriate)
   void fixHeapDown(int i) {
-    // while there is at least a left child
+    // while node at i has at least a left child node
     while (i*2+1 < size()) {
       int index = minChild(i*2+1);
       // check if parent key is greater than min child key
@@ -89,12 +92,14 @@ private:
         heap[index] = heap[i];
         heap[i] = temp;
       } 
+      // repeat this fixing process on the child
       i = index;
     }
   }
 
   int minChild(int k){
     // check if the right child exists
+    // if so, determine which child's ket is smaller and return that index
     if (k+1 < size()) {
       if (heap[k].key > heap[k+1].key) {
         return k+1;

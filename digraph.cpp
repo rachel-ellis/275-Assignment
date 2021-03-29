@@ -7,7 +7,6 @@
 // ------------------------------------
 
 #include "digraph.h"
-
 using namespace std;
 
 void Digraph::addVertex(int v) {
