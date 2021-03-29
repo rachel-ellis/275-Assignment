@@ -1,44 +1,52 @@
+// -----------------------------------
+//  Name: Rachel Ellis and Anushka Khare
+//  ID: 1618966 and 1617774
+//  CMPUT 275
+//
+//  Assignment Part 1: Trivial Navigation System
+// ------------------------------------
+
 #include <unordered_map>
 #include "wdigraph.h"
 #include "dijkstra.h"
 #include "heap.h"
 #include <iostream>
 using namespace std;
-typedef pair<int, int> PII; // aliases or symbolic name of an existing type 
+typedef pair<int, int> PII; 
 typedef pair<int, long long> PIL;
 
 void dijkstra(const WDigraph& graph, int startVertex, unordered_map<int, PIL>& tree) {
     //creating a binary heap to store the points being explored
     BinaryHeap <PII, long long> StoringPoints;
 
-    // putting in the root node
+    // putting in the starting vertex as the root node
     StoringPoints.insert(PII(startVertex, -1), 0);
     
+    // while the heap isn't empty
     while (StoringPoints.size() != 0) {
         
-        // returning the min item
+        // return and remove the the min item from the heap
        HeapItem <PII, long long> point = StoringPoints.min();
-       // removing the min edge from the heap 
        StoringPoints.popMin();  
 
-       // relabelling the variables so we can access the elements 
        int first_point = point.item.first;
        int sec_point = point.item.second;
        long long dist = point.key;
        
-       // checking if the node is not reached then continue;
+       // check if the node is not reached 
         if (tree.find(first_point) != tree.end()) {
             continue;
         }
 
         // append the current node to the reached map
         tree[first_point] = PIL(sec_point, dist); 
-        // looking at the neighbouring points of the nearest waypoint and adding them to the heap
+
+        // look at the neighbouring points of the nearest waypoint and add them to the heap
         for (auto iter = graph.neighbours(first_point); iter != graph.endIterator(first_point); iter++) {
             int nbr = *iter; 
-            long long cost = dist + graph.getCost(first_point, nbr); // current time is d and then we take the cost of the edge and add that 
-            StoringPoints.insert(PII(nbr, first_point), cost); // passing in the neghobur, v is the beginning of the edge and nbr is the end of the edge 
-            // and we are also passing in the cost 
+            // neighbour's cost will be the previous cost (dist) plus the cost of the new edge
+            long long cost = dist + graph.getCost(first_point, nbr); 
+            StoringPoints.insert(PII(nbr, first_point), cost);
         }
     }
 }

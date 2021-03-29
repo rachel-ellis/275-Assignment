@@ -1,3 +1,11 @@
+// -----------------------------------
+//  Name: Rachel Ellis and Anushka Khare
+//  ID: 1618966 and 1617774
+//  CMPUT 275
+//
+//  Assignment Part 1: Trivial Navigation System
+// ------------------------------------
+
 #ifndef _GRAPH_H_
 #define _GRAPH_H_
 

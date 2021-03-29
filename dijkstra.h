@@ -1,3 +1,12 @@
+// -----------------------------------
+//  Name: Rachel Ellis and Anushka Khare
+//  ID: 1618966 and 1617774
+//  CMPUT 275
+//
+//  Assignment Part 1: Trivial Navigation System
+// ------------------------------------
+
+
 #ifndef _DIJKSTRA_H_
 #define _DIJKSTRA_H_
 
@@ -23,7 +32,6 @@ typedef pair<int, PIL> PIPIL;
 // to implement Dijkstra's algorithm differently, this is here simply because
 // it was used in the lecture for the slower version of Dijkstra's algorithm.
 
-void dijkstra(const WDigraph& graph, int startVertex,
-              unordered_map<int, PIL>& tree);
+void dijkstra(const WDigraph& graph, int startVertex, unordered_map<int, PIL>& tree);
 
 #endif

@@ -1,3 +1,11 @@
+// -----------------------------------
+//  Name: Rachel Ellis and Anushka Khare
+//  ID: 1618966 and 1617774
+//  CMPUT 275
+//
+//  Assignment Part 1: Trivial Navigation System
+// ------------------------------------
+
 #include <vector>
 
 // Only assumes the key type K is totally ordered and comparable via <
@@ -30,17 +38,16 @@ public:
   }
 
   // pop the minimum item from the heap
-// CAN I ASSUME THAT IT ISN"T EMPTY??
   void popMin() {
-    // swap the items and keys at the last vertex of the heap and the root
+    // swap the element at the last vertex of the heap and the root
     HeapItem<T, K> temp;
     temp = heap[0];
     int end = size() - 1;
     heap[0] = heap[end];
     heap[end] = temp;
-    // pop the last item and key in the heap
+    // pop the last element in the heap
     heap.pop_back();
-    // need to fix as the heap property may be violated
+    // need to fix as the heap property may be violated from the root node down
     fixHeapDown(0); 
   }
 
