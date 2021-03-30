@@ -21,13 +21,30 @@ public:
   // constructor not required because the only "initialization"
   // is through the constructor of the variable "heap" which is called by default
 
-  // return the minimum element in the heap
+  /*
+  Description: Return the minimum element in the heap
+
+  Arguments: 
+    (void)
+
+  Returns:
+    (HeapItem<T,K>): root node in the heap
+  */
   HeapItem<T, K> min() const {
    return heap[0];
   }
 
-  // insert an item with the given key
-  // if the item is already in the heap, will still insert a new copy with this key
+  /*
+  Description: Insert an item with the given key into the heap 
+               (regardless of whether that item is already in it or not)
+  
+  Arguments: 
+    item (const T&): item of the element to be added to the heap
+    key (const K&):  key of the element to be added to the heap
+
+  Returns:
+    (void)
+  */
   void insert(const T& item, const K& key){
     HeapItem<T, K> next;
     next.item = item;
@@ -38,8 +55,16 @@ public:
     // need to fix as the heap property may be violated from the end up
     fixHeapUp(end);
   }
+ 
+  /*
+  Description: Pop the minimum element from the heap
+  
+  Arguments: 
+    (void)
 
-  // pop the minimum item from the heap
+  Returns:
+    (void)
+  */
   void popMin() {
     // swap the element at the last vertex of the heap and the root
     HeapItem<T, K> temp;
@@ -53,7 +78,15 @@ public:
     fixHeapDown(0); 
   }
 
-  // returns the number of items held in the heap
+  /*
+  Description: Returns the size of the heap
+  
+  Arguments: 
+    (void)
+
+  Returns:
+    (int): size of the heap (number of elements in the heap) 
+  */
   int size() const {
     return heap.size();
   }
@@ -62,7 +95,16 @@ private:
   // the array holding the heap
   std::vector< HeapItem<T, K> > heap;
 
-  // will fix the heap property at index i and recurse with its parent
+  /*
+  Description: Fix the heap property at index i and recurse with its parent 
+               (if the parent node exists)
+  
+  Arguments: 
+    i (int): Index of child node in heap to fix the heap property at
+
+  Returns:
+    (void)
+  */
   void fixHeapUp(int i) {
     // check if child is less than parent
     while (heap[i].key < heap[(i-1)/2].key) {  
@@ -78,9 +120,17 @@ private:
       }
     }
   }
+ 
+  /*
+  Description:  Fix the heap property at index i and recurse with the child
+                that received i's item (if appropriate)
+  
+  Arguments: 
+    i (int): Index of parent node in heap to fix the heap from
 
-  // will fix the heap property at index i and recurse with the child
-  // that received i's item (if appropriate)
+  Returns:
+    (void)
+  */
   void fixHeapDown(int i) {
     // while node at i has at least a left child node
     while (i*2+1 < size()) {
@@ -97,6 +147,15 @@ private:
     }
   }
 
+  /*
+  Description: Helper function to find the minimum child node
+
+  Arguments: 
+    k (int): Index of left child node in heap
+
+  Returns:
+    (int): Index of child with minimum key value in the heap
+  */
   int minChild(int k){
     // check if the right child exists
     // if so, determine which child's ket is smaller and return that index
