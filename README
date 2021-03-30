@@ -7,14 +7,14 @@ Assignment 1 — Trivial Navigation System
 We did the Assignment with some help from TAs during office hours but other than that we received no other help.
 
 Included Files:
-	Makefile 
-	README
-	digraph.h
-	digraph.cpp
-	server.cpp
-	heap.h
-	dijkstra.cpp
-	dijkstra.h
+- Makefile 
+- README
+- digraph.h
+- digraph.cpp
+- server.cpp
+- heap.h
+- dijkstra.cpp
+- dijkstra.h
 
 
 Makefile Targets:
@@ -39,4 +39,4 @@ Notes and Assumptions:
 
 	To ensure that the purpose of the assignment was accomplished we then implemented the main fucntion in the server.cpp and appropriately called the functions listed above. This program assumes that the input user will correctly call the Makefile targets as listed above and will clear the object files prior to every execution. Futhermore, when presented with input points that are  not present on the edmonton graph, we have implemented the manhantan function to calculate the closest vertex to the given point. 
 
-	In heap.h we also assume that the user will not call min or minPop on an empty binary heap. We also assumed that the user will provide input in the specified way (eg. single spaces between different values on a line to make parsing easier).
+	In heap.h we assume that the user will not call min or minPop on an empty binary heap. We also assumed that the user will provide input in the specified way (eg. single spaces between different values on a line to make parsing easier).

@@ -96,7 +96,20 @@ int main() {
     return 0;
 }
 
-void readGraph(string filename, WDigraph& graph, 
+/*
+  Description: Read the Edmonton map data from the provided file and load it
+               into the WDigraph object. Also, store vertex coordinates in
+               the Point struct and map each vertex to its corresponding Point.
+  
+  Arguments: 
+    filename (string): file containing the vertex and edges to create the graph
+    graph (WDigraph&):  weighted digraph object to add vertices and edges to
+    points (unordered_map<int, Point>&): map for vertex id and coordinates
+
+  Returns:
+    (void)
+*/
+void readGraph(string filename, WDigraph& graph,
     unordered_map<int, Point>& points) {
     string line;
     ifstream infile(filename);
