@@ -97,17 +97,17 @@ int main() {
 }
 
 /*
-  Description: Read the Edmonton map data from the provided file and load it
-               into the WDigraph object. Also, store vertex coordinates in
-               the Point struct and map each vertex to its corresponding Point.
+    Description: Read the Edmonton map data from the provided file and load it
+                 into the WDigraph object. Also, store vertex coordinates in
+                 the Point struct and map each vertex to its Point struct
   
-  Arguments: 
-    filename (string): file containing the vertex and edges to create the graph
-    graph (WDigraph&):  weighted digraph object to add vertices and edges to
-    points (unordered_map<int, Point>&): map for vertex id and coordinates
+    Arguments: 
+        filename (string): file containing the vertex and edges to load graph
+        graph (WDigraph&):  weighted digraph object to add vertex and edges to
+        points (unordered_map<int, Point>&): map for vertex id and coordinates
 
-  Returns:
-    (void)
+    Returns:
+        (void)
 */
 void readGraph(string filename, WDigraph& graph,
     unordered_map<int, Point>& points) {
@@ -148,8 +148,16 @@ void readGraph(string filename, WDigraph& graph,
     }
 }
 
-    // Return the Manhattan distance between the two given points
-    // two point structure objects of are being passed in called 
+/* 
+    Description: Calculate and return the Manhattan distance between 2 Points
+    
+    Arguments: 
+        pt1 (const Point&), pt2 (const Point&): these are references to the Point
+        struct that stores a point's longitude and latitude
+
+    Return: 
+        (long long): the distance or cost to get from one point to another 
+*/ 
 long long manhattan(const Point& pt1, const Point& pt2) {
     // calculate and return the cost using the formula for manhattan distance
     long long x1 = pt1.lat;
@@ -165,6 +173,19 @@ long long manhattan(const Point& pt1, const Point& pt2) {
     return cost;
 }
 
+/* 
+    Description: Find the closest vertices of the graph for the 2 inputted Points
+    
+    Arguments: 
+        pt1 (const Point&), pt2 (const Point&): these are references to the Point
+        struct that stores a point's longitude and latitude
+        points (unordered_map<int, Point>&): map for vertex id and coordinates
+        startID (int): ID for the vertix closest to the start point
+        endID (int): ID for the vertix closest to the end point
+
+    Return: 
+        (long long): the distance or cost to get from one point to another 
+*/ 
 void findVertex(const Point& pt1, const Point& pt2, 
     unordered_map<int, Point>& points, int& startID, int& endID) {
     // loop to find the vertex that either matches or is closest to the  inputted start point

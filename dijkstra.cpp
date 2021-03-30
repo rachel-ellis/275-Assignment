@@ -16,6 +16,19 @@ using namespace std;
 typedef pair<int, int> PII; 
 typedef pair<int, long long> PIL;
 
+/*
+  Description: Compute the least cost of paths that starts at a specific vertex
+              Funcitons from binary heap are used for the implementation
+
+  Arguments: 
+    graph (const WDiagraph&): reference to an instance of WDiagraph
+    startVertex (int): vertex is considered as the root of the search tree
+    tree (unordered map<int, PIL>): stores the two vertices and the cost of
+                    their edge and is used to construct the least cost path
+
+Return:
+  (void)
+*/
 void dijkstra(const WDigraph& graph, int startVertex, unordered_map<int, PIL>& tree) {
     //creating a binary heap to store the points being explored
     BinaryHeap <PII, long long> StoringPoints;
