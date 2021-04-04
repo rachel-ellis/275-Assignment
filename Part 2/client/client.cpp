@@ -10,6 +10,8 @@
 #include <sys/socket.h>     // socket, connect
 using namespace std;
 
+// NOTE, client takes the port and IP address in as input!!!
+
 #define BUFFER_SIZE 1024
 #define SERVER_PORT 50000
 #define SERVER_IP "127.0.0.1"
@@ -79,7 +81,7 @@ int main(int argc, char const *argv[]) {
     */
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_desc == -1) {
-        std::cerr << "Listening socket creation failed!\n";
+        cerr << "Listening socket creation failed!\n";
         return 1;
     }
 
@@ -94,19 +96,41 @@ int main(int argc, char const *argv[]) {
 
     // connecting to the server socket
     if (connect(socket_desc, (struct sockaddr *) &peer_addr, sizeof peer_addr) == -1) {
-        std::cerr << "Cannot connect to the host!\n";
+        cerr << "Cannot connect to the host!\n";
         close(socket_desc);
         return 1;
     }
-    std::cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
+    cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
 
     // I THINK THIS IS THE ONLY PART WE HAVE TO CHANGE
-    // 1. IT'S NOT STD INPUT
-    // 2. FIX MEANING OF INPUT (NOT JUST ONE INT)
-    // 3. WRITE THE COORDINATES TO OUTPIPE
+    // 4. WRITE THE WAYPOINTS TO OUTPIPE
     while (true) {
-        std::cout << "Enter an integer or \"Q\" to quit:\n";
-        std::cin.getline(outbound, BUFFER_SIZE);
+        // read in the coordinates of the start and end point
+        int bytes_read;
+        memset(outbound, 0, sizeof(outbound));
+        bytes_read = read(in, outbound, 22);
+        string pt1 = string(outbound);
+        memset(outbound, 0, sizeof(outbound));
+        bytes_read = read(in, outbound, 22);
+        string pt2 = string(outbound);
+
+        // remove the newline character
+        pt1 = pt1.substr(0,pt1.length()-1);
+        pt2 = pt2.substr(0,pt2.length()-1);
+
+        // parse the strings to do the necessary conversions
+        auto space = pt1.find(" ");
+        auto lat1 = static_cast<long long>(stod(pt1.substr(0, space-1))*100000);
+        auto lon1 = static_cast<long long>(stod(pt1.substr(space+1))*100000);
+
+        space = pt2.find(" ");
+        auto lat2 = static_cast<long long>(stod(pt2.substr(0, space-1))*100000);
+        auto lon2 = static_cast<long long>(stod(pt2.substr(space+1))*100000);
+        
+        // add info back to outbound to write to the socket
+        string ans = "R " + to_string(lat1) + " " + to_string(lon1);
+        ans += + " " + to_string(lat2) + " " + to_string(lon2);
+        strcpy(outbound, ans.c_str());
 
         send(socket_desc, outbound, strlen(outbound) + 1, 0);
         if (strcmp("Q", outbound) == 0) {
@@ -115,12 +139,13 @@ int main(int argc, char const *argv[]) {
 
         // blocking call
         int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
-        std::cout << "Received: " << inbound << std::endl;
+        cout << "Received: " << inbound << endl;
     }
 
     // close socket
     close(socket_desc);
 
+    // close pipes and then reclaim the backing files
     close(in);
     close(out);
     unlink(inpipe);

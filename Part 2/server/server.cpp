@@ -12,6 +12,14 @@
 #include "wdigraph.h"
 #include "dijkstra.h"
 
+#include <netdb.h>      // getaddrinfo, freeaddrinfo, INADDR_ANY (superset of netinet/in.h)
+#include <cstdlib>      // atoi
+#include <cstring>      // strlen, strcmp
+#include <sys/types.h>    // include for portability
+#include <sys/time.h>   // timeval
+
+// NOTE, server takes the port in as input!!!
+
 #define PORT 50000
 #define LISTEN_BACKLOG 50
 #define BUFFER_SIZE 1024
@@ -113,11 +121,12 @@ int main(int argc, char* argv[]) {
   }
 
   // prepare sockaddr_in structure variable
-  my_addr.sin_family = AF_INET;       // address family (2 bytes)
-  my_addr.sin_port = htons(PORT);       // port in network byte order (2 bytes)
-                        // htons takes care of host-order to short network-order conversion.
-  my_addr.sin_addr.s_addr = htonl(INADDR_ANY);// internet address (4 bytes) INADDR_ANY is all local interfaces
-                        // htons takes care of host-order to long network-order conversion.
+  my_addr.sin_family = AF_INET;   // address family (2 bytes)
+  my_addr.sin_port = htons(PORT);  
+  // port in network byte order (2 bytes)
+  // htons takes care of host-order to short network-order conversion.
+  my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  // internet address (4 bytes) INADDR_ANY is all local interfaces
 
   // note bind takes in a protocol independent address structure
   // hence we need to cast sockaddr_in* to sockaddr*
@@ -129,11 +138,11 @@ int main(int argc, char* argv[]) {
   std::cout << "Binding was successful\n";
 
 
-    if (listen(lstn_socket_desc, LISTEN_BACKLOG) == -1) {
-      std::cerr << "Cannot listen to the specified socket!\n";
-        close(lstn_socket_desc);
-        return 1;
-    }
+  if (listen(lstn_socket_desc, LISTEN_BACKLOG) == -1) {
+    std::cerr << "Cannot listen to the specified socket!\n";
+      close(lstn_socket_desc);
+      return 1;
+  }
 
   socklen_t peer_addr_size = sizeof my_addr;
 
@@ -153,23 +162,33 @@ int main(int argc, char* argv[]) {
     // declare structure variable that represents an elapsed time 
     // it stores the number of whole seconds and the number of microseconds
     struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
+    if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (void *) &timer, sizeof(timer)) == -1) {
+      std::cerr << "Cannot set socket options!\n";
+      close(conn_socket_desc);
+      return 1;
+    }
 
     while (true) {
       // blocking call - blocks until a message arrives 
       // (unless O_NONBLOCK is set on the socket's file descriptor)
-      int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+      int rec_size = recv(conn_socket_desc, buffer, BUFFER_SIZE, 0);
       if (rec_size == -1) {
         std::cout << "Timeout occurred... still waiting!\n";
         continue;
       }
       std::cout << "Message received\n";
-      if (strcmp("Q", echobuffer) == 0) {
+      if (strcmp("Q", buffer) == 0) {
         std::cout << "Connection will be closed\n";
         break;
       }
 
-      // convert a c-style string to an integer
-      int num = atoi(echobuffer);
+      // read in request
+      string request = buffer;
+
+      // check if valid
+      if (strcmp("R", c) != 0) {
+        // invalid - go to waiting for initial route request state
+      }
 
       // convert the integer to a string
       std::string str = std::to_string(-num);
