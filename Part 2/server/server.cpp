@@ -12,6 +12,10 @@
 #include "wdigraph.h"
 #include "dijkstra.h"
 
+#define PORT 50000
+#define LISTEN_BACKLOG 50
+#define BUFFER_SIZE 1024
+
 struct Point {
     long long lat, lon;
 };
@@ -87,14 +91,100 @@ int main(int argc, char* argv[]) {
 
   // In Part 2, client and server communicate using a pair of sockets
   // modify the part below so that the route request is read from a socket
-  // (instead of stdin) and the route information is written to a socket
+  // and the route information is written to a socket
 
+  // declare structure variables that store local and peer socket addresses
+  // sockaddr_in is the address sturcture used for IPv4 
+  // sockaddr is the protocol independent address structure
+  struct sockaddr_in my_addr, peer_addr;
+
+  // zero out the structor variable because it has an unused part
+  memset(&my_addr, '\0', sizeof my_addr);
+
+  // declare variables for socket descriptors 
+  int lstn_socket_desc, conn_socket_desc;
+
+  char buffer[BUFFER_SIZE] = {};
+
+  lstn_socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+  if (lstn_socket_desc == -1) {
+    std::cerr << "Listening socket creation failed!\n";
+    return 1;
+  }
+
+  // prepare sockaddr_in structure variable
+  my_addr.sin_family = AF_INET;       // address family (2 bytes)
+  my_addr.sin_port = htons(PORT);       // port in network byte order (2 bytes)
+                        // htons takes care of host-order to short network-order conversion.
+  my_addr.sin_addr.s_addr = htonl(INADDR_ANY);// internet address (4 bytes) INADDR_ANY is all local interfaces
+                        // htons takes care of host-order to long network-order conversion.
+
+  // note bind takes in a protocol independent address structure
+  // hence we need to cast sockaddr_in* to sockaddr*
+  if (bind(lstn_socket_desc, (struct sockaddr *) &my_addr, sizeof my_addr) == -1) {
+      std::cerr << "Binding failed!\n";
+      close(lstn_socket_desc);
+      return 1;
+  }
+  std::cout << "Binding was successful\n";
+
+
+    if (listen(lstn_socket_desc, LISTEN_BACKLOG) == -1) {
+      std::cerr << "Cannot listen to the specified socket!\n";
+        close(lstn_socket_desc);
+        return 1;
+    }
+
+  socklen_t peer_addr_size = sizeof my_addr;
+
+  // comment the outer while loop to make the server 
+  // terminate after accepting one connection request
+  while (true) {
+    // extract the first connection request from the queue of pending connection requests
+    // return a new connection socket descriptor which is not in the listening state
+    conn_socket_desc = accept(lstn_socket_desc, (struct sockaddr *) &peer_addr, &peer_addr_size);
+    if (conn_socket_desc == -1){
+      std::cerr << "Connection socket creation failed!\n";
+      // continue;
+      return 1;
+    }
+    std::cout << "Connection request accepted from " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
+
+    // declare structure variable that represents an elapsed time 
+    // it stores the number of whole seconds and the number of microseconds
+    struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
+
+    while (true) {
+      // blocking call - blocks until a message arrives 
+      // (unless O_NONBLOCK is set on the socket's file descriptor)
+      int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+      if (rec_size == -1) {
+        std::cout << "Timeout occurred... still waiting!\n";
+        continue;
+      }
+      std::cout << "Message received\n";
+      if (strcmp("Q", echobuffer) == 0) {
+        std::cout << "Connection will be closed\n";
+        break;
+      }
+
+      // convert a c-style string to an integer
+      int num = atoi(echobuffer);
+
+      // convert the integer to a string
+      std::string str = std::to_string(-num);
+      send(conn_socket_desc, str.c_str(), str.length() + 1, 0);
+      std::cout << "Computation result sent back\n";
+    }
+  }
+
+  //--------------------- OLD STUFF BELOW-----------------------
   // read a request
   char c;
   Point sPoint, ePoint;
   cin >> c >> sPoint.lat >> sPoint.lon >> ePoint.lat >> ePoint.lon;
 
-  // c is guaranteed to be 'R' in part 1, no need to error check until part 2
+  // NEED TO check that c is R
 
   // get the points closest to the two points we read
   int start = findClosest(sPoint, points), end = findClosest(ePoint, points);
@@ -125,5 +215,9 @@ int main(int argc, char* argv[]) {
     cout << "E" << endl;
   }
 
+
+  // close socket descriptors
+  close(lstn_socket_desc);
+  close(conn_socket_desc);
   return 0;
 }
