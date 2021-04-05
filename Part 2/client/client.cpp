@@ -13,7 +13,7 @@ using namespace std;
 // NOTE, client takes the port and IP address in as input!!!
 
 #define BUFFER_SIZE 1024
-#define SERVER_PORT 50000
+#define SERVER_PORT 8888
 #define SERVER_IP "127.0.0.1"
 
 int create_and_open_fifo(const char * pname, int mode) {
@@ -89,7 +89,7 @@ int main(int argc, char const *argv[]) {
     // port in network byte order (2 bytes)
     // htons takes care of host-order to short network-order conversion
 
-    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);     
+    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);   
     // internet address (4 bytes). INADDR_LOOPBACK is localhost address
 
     // connecting to the server socket
@@ -117,7 +117,6 @@ int main(int argc, char const *argv[]) {
         outbound[0] = '\0';
         bytes_read = read(in, outbound, 22);
         string pt2 = string(outbound);
-        cout << pt1 << " " << pt2 << endl;
 
         // remove the newline character
         pt1 = pt1.substr(0,pt1.length()-1);
@@ -145,8 +144,8 @@ int main(int argc, char const *argv[]) {
             int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
             cout << "Received: " << inbound << endl;
             if (strcmp(inbound, "N 0") == 0) {
-                char array1[] = "E";
-                strcpy(inbound,array1);
+                //char array1[] = "E";
+                //strcpy(inbound,array1);
                 num = 0;
                 break;
             } else {
@@ -176,6 +175,7 @@ int main(int argc, char const *argv[]) {
             string input = string(inbound);
 
             if (input.at(0) == 'W') {
+                cout << input << endl;
                 size_t space1 = input.find(" ", 2);
                 // IS THIS A PROPER CONVERSION BACK??
                 double pt_lat = (double)stoll(input.substr(2, space1 - 1));
@@ -183,10 +183,11 @@ int main(int argc, char const *argv[]) {
                 pt_lat /= 100000;
                 pt_lon /= 100000;
                 points += to_string(pt_lat) + " " + to_string(pt_lon) + "\n";
+                cout << points << endl;
                 num--;
             }
-
         }
+        cout << "left loop";
         // write waypoints to plotter
         // WHY DO I NEED ANOTHER ACKNOWLEDGEMENT FOR "E" AT THE END
         // DON'T I ADD IT REGARDLESS??

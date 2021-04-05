@@ -78,9 +78,6 @@ void readGraph(const string& filename, WDigraph& g, unordered_map<int, Point>& p
   }
 }
 
-// Keep in mind that in Part I, your program must handle 1 request
-// but in Part 2 you must serve the next request as soon as you are
-// done handling the previous one
 // WE ONLY NEED TO CHANGE THIS PART
 int main(int argc, char* argv[]) {
   WDigraph graph;
@@ -89,11 +86,7 @@ int main(int argc, char* argv[]) {
   // build the graph
   readGraph("edmonton-roads-2.0.1.txt", graph, points);
 
-  // In Part 2, client and server communicate using a pair of sockets
-  // modify the part below so that the route request is read from a socket
-  // (instead of stdin) and the route information is written to a socket
-
-   struct sockaddr_in my_addr, peer_addr;
+  struct sockaddr_in my_addr, peer_addr;
 
   // zero out the structor variable because it has an unused part
   memset(&my_addr, '\0', sizeof my_addr); // 0 out the structure objects 
@@ -136,7 +129,6 @@ int main(int argc, char* argv[]) {
   }
   //std::cout << "Binding was successful\n";
 
-
     if (listen(lstn_socket_desc, LISTEN_BACKLOG) == -1) {
       std::cerr << "Cannot listen to the specified socket!\n";
         close(lstn_socket_desc);
@@ -157,7 +149,7 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-     int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+    int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
     string line;
     line = echobuffer;
     size_t space1 = line.find(" ", 2);
@@ -169,13 +161,13 @@ int main(int argc, char* argv[]) {
     long long lon2 = stoll(line.substr(space3 + 1));
 
     char c; // reading in the intial character. 
-  Point sPoint, ePoint; // creating sturuct objects of type Point so then the lan and lon can be acessed right away. 
-  sPoint.lat = lat1;
-  sPoint.lon = lon1;
-  ePoint.lat = lat2;
-  ePoint.lon = lon2;
+    Point sPoint, ePoint; // creating sturuct objects of type Point so then the lan and lon can be acessed right away. 
+    sPoint.lat = lat1;
+    sPoint.lon = lon1;
+    ePoint.lat = lat2;
+    ePoint.lon = lon2;
 
-  // c is guaranteed to be 'R' in part 1, no need to error check until part 2
+    // c is guaranteed to be 'R' in part 1, no need to error check until part 2
 
   // get the points closest to the two points we read
   int start = findClosest(sPoint, points), end = findClosest(ePoint, points);
@@ -202,18 +194,20 @@ int main(int argc, char* argv[]) {
     // output the path
     int path_size = path.size();
     string len = to_string(path_size);
-    string num_output = "N" + len ;
+    string num_output = "N " + len;
     send(conn_socket_desc, num_output.c_str(), num_output.length() + 1, 0);
+    // NOTE: YOU SHOULDN"T EVEN SEND THE FIRST POINT BEFORE GETTING ACK
     for (int v : path) {
-      //
       string lat = to_string(points[v].lat);
       string lon = to_string(points[v].lon);
-      string waypoints = "W"+ lat + " " + lon ;
+      string waypoints = "W " + lat + " " + lon;
       send(conn_socket_desc, waypoints.c_str(), waypoints.length() + 1, 0);
 
-      //ackowledgemtn 
+      // acknowledgement 
       int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
       string received_ack = echobuffer;
+      cout << "the acknowledgement received:" << endl;
+      cout << rereceived_ack << endl;
       if (received_ack.find("A")) {
         continue;
       }
@@ -221,7 +215,7 @@ int main(int argc, char* argv[]) {
         break;
       }
     }
-    string end_output ="E";
+    string end_output = "E";
     send(conn_socket_desc, end_output.c_str(), end_output.length() + 1, 0);
   }
     // declare structure variable that represents an elapsed time 

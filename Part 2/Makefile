@@ -1,4 +1,7 @@
 all: server client
+	gnome-terminal --./client
+	gnome-terminal --./server
+	gnome-terminal --./plotter
 
 server: server.o
 	g++ -o server server.o
