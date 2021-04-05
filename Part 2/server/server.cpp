@@ -210,6 +210,16 @@ int main(int argc, char* argv[]) {
       string lon = to_string(points[v].lon);
       string waypoints = "W"+ lat + " " + lon ;
       send(conn_socket_desc, waypoints.c_str(), waypoints.length() + 1, 0);
+
+      //ackowledgemtn 
+      int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+      string received_ack = echobuffer;
+      if (received_ack.find("A")) {
+        continue;
+      }
+      else{
+        break;
+      }
     }
     string end_output ="E";
     send(conn_socket_desc, end_output.c_str(), end_output.length() + 1, 0);
@@ -222,8 +232,8 @@ int main(int argc, char* argv[]) {
       while (true) {
         // blocking call - blocks until a message arrives 
         // (unless O_NONBLOCK is set on the socket's file descriptor)
-        int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-        if (rec_size == -1) {
+        int rec_size2 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+        if (rec_size2 == -1) {
           std::cout << "Timeout occurred... still waiting!\n";
           continue;
         }
