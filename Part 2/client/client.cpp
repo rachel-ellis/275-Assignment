@@ -49,11 +49,9 @@ int main(int argc, char const *argv[]) {
     cout << "outpipe opened..." << endl;
 
     // Here is what you need to do:
-    // 1. Establish a connection with the server
-    // 2. Read coordinates of start and end points from inpipe (blocks until they are selected)
-    //    If 'Q' is read instead of the coordinates then go to Step 7
+    // 2. Read coordinates of start and end points from inpipe
     // 3. Write to the socket
-    // 4. Read coordinates of waypoints one at a time (blocks until server writes them)
+    // 4. Read coordinates of waypoints one at a time
     // 5. Write these coordinates to outpipe
 
     // Declare structure variables that store local and peer socket addresses
@@ -102,24 +100,31 @@ int main(int argc, char const *argv[]) {
     }
     cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
 
-    // I THINK THIS IS THE ONLY PART WE HAVE TO CHANGE
-    // 4. WRITE THE WAYPOINTS TO OUTPIPE
     while (true) {
         // read in the coordinates of the start and end point
         int bytes_read;
-        memset(outbound, 0, sizeof(outbound));
+        // ensure that outbound is empty
+        outbound[0] = '\0';
         bytes_read = read(in, outbound, 22);
+
+        if (strcmp("Q\n", outbound) == 0) {
+            send(socket_desc, outbound, strlen(outbound) + 1, 0);
+            break;
+        }
+
         string pt1 = string(outbound);
-        memset(outbound, 0, sizeof(outbound));
+        // empty outbound
+        outbound[0] = '\0';
         bytes_read = read(in, outbound, 22);
         string pt2 = string(outbound);
+        cout << pt1 << " " << pt2 << endl;
 
         // remove the newline character
         pt1 = pt1.substr(0,pt1.length()-1);
         pt2 = pt2.substr(0,pt2.length()-1);
 
         // parse the strings to do the necessary conversions
-        auto space = pt1.find(" ");
+        size_t space = pt1.find(" ");
         auto lat1 = static_cast<long long>(stod(pt1.substr(0, space-1))*100000);
         auto lon1 = static_cast<long long>(stod(pt1.substr(space+1))*100000);
 
@@ -131,15 +136,63 @@ int main(int argc, char const *argv[]) {
         string ans = "R " + to_string(lat1) + " " + to_string(lon1);
         ans += + " " + to_string(lat2) + " " + to_string(lon2);
         strcpy(outbound, ans.c_str());
-
         send(socket_desc, outbound, strlen(outbound) + 1, 0);
-        if (strcmp("Q", outbound) == 0) {
-            break;
-        }
 
-        // blocking call
-        int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
-        cout << "Received: " << inbound << endl;
+        int write_bytes;
+        int num;
+        while (true) {
+            // blocking call
+            int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
+            cout << "Received: " << inbound << endl;
+            if (strcmp(inbound, "N 0") == 0) {
+                char array1[] = "E";
+                strcpy(inbound,array1);
+                num = 0;
+                break;
+            } else {
+                string input = string(inbound);
+                if (input.at(0) = 'N') {
+                    num = stoi(input.substr(2));
+                    // DO I HAVE TO MAKE SURE THE STRING IS A NUMBER???
+                    break;
+                } else {
+                    // received input is invalid
+                    // resend the request with the start and end point
+                    // and loop until inbound is valid
+                    send(socket_desc, outbound, strlen(outbound) + 1, 0);
+                }
+            }
+        }
+        
+        // WRONG INPUT WILL CAUSE THIS WHOLE PROCESS TO RESTART??
+        // I FEEL LIKE I NEED A FUNCTION TO IMPLEMENT THAT THEN???
+        // send acknowledgement
+        string points;
+        while (num) {
+            string s = "A";
+            strcpy(outbound, s.c_str());
+            send(socket_desc, outbound, strlen(outbound) + 1, 0);
+            int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
+            string input = string(inbound);
+
+            if (input.at(0) == 'W') {
+                size_t space1 = input.find(" ", 2);
+                // IS THIS A PROPER CONVERSION BACK??
+                double pt_lat = (double)stoll(input.substr(2, space1 - 1));
+                double pt_lon = (double)stoll(input.substr(space1 + 1));
+                pt_lat /= 100000;
+                pt_lon /= 100000;
+                points += to_string(pt_lat) + " " + to_string(pt_lon) + "\n";
+                num--;
+            }
+
+        }
+        // write waypoints to plotter
+        // WHY DO I NEED ANOTHER ACKNOWLEDGEMENT FOR "E" AT THE END
+        // DON'T I ADD IT REGARDLESS??
+        points += "E";
+        strcpy(inbound, points.c_str());
+        write_bytes = write(out, inbound, sizeof inbound);
     }
 
     // close socket
