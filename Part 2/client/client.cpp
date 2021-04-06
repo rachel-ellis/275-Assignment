@@ -12,7 +12,7 @@ using namespace std;
 
 // NOTE, client takes the port and IP address in as input!!!
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2024
 #define SERVER_PORT 8888
 #define SERVER_IP "127.0.0.1"
 
@@ -144,8 +144,6 @@ int main(int argc, char const *argv[]) {
             int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
             cout << "Received: " << inbound << endl;
             if (strcmp(inbound, "N 0") == 0) {
-                //char array1[] = "E";
-                //strcpy(inbound,array1);
                 num = 0;
                 break;
             } else {
@@ -165,34 +163,37 @@ int main(int argc, char const *argv[]) {
         
         // WRONG INPUT WILL CAUSE THIS WHOLE PROCESS TO RESTART??
         // I FEEL LIKE I NEED A FUNCTION TO IMPLEMENT THAT THEN???
-        // send acknowledgement
+
+        
         string points;
-        while (num) {
+        while (true) {
+            // send acknowledgement
             string s = "A";
             strcpy(outbound, s.c_str());
             send(socket_desc, outbound, strlen(outbound) + 1, 0);
             int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
             string input = string(inbound);
-
             if (input.at(0) == 'W') {
-                cout << input << endl;
                 size_t space1 = input.find(" ", 2);
-                // IS THIS A PROPER CONVERSION BACK??
+                // conversion back
                 double pt_lat = (double)stoll(input.substr(2, space1 - 1));
                 double pt_lon = (double)stoll(input.substr(space1 + 1));
                 pt_lat /= 100000;
                 pt_lon /= 100000;
                 points += to_string(pt_lat) + " " + to_string(pt_lon) + "\n";
-                cout << points << endl;
-                num--;
+            } else if (input == "E") {
+                points += input + "\n";
+                break;
             }
         }
-        cout << "left loop";
+        if (!points.empty()) {
+        	strcpy(inbound, points.c_str());
+        } else {
+        	char array1[] = "E\n";
+            strcpy(inbound, array1);
+        }
+        // cout << points << endl;
         // write waypoints to plotter
-        // WHY DO I NEED ANOTHER ACKNOWLEDGEMENT FOR "E" AT THE END
-        // DON'T I ADD IT REGARDLESS??
-        points += "E";
-        strcpy(inbound, points.c_str());
         write_bytes = write(out, inbound, sizeof inbound);
     }
 

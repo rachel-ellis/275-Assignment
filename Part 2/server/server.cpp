@@ -14,7 +14,7 @@
 
 #define PORT 8888
 #define LISTEN_BACKLOG 50
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2024
 struct Point {
     long long lat, lon;
 };
@@ -78,7 +78,6 @@ void readGraph(const string& filename, WDigraph& g, unordered_map<int, Point>& p
   }
 }
 
-// WE ONLY NEED TO CHANGE THIS PART
 int main(int argc, char* argv[]) {
   WDigraph graph;
   unordered_map<int, Point> points;
@@ -152,6 +151,7 @@ int main(int argc, char* argv[]) {
     int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
     string line;
     line = echobuffer;
+    // NEED TO ERROR CHECK THAT LINE STARTS WITH "R"
     size_t space1 = line.find(" ", 2);
     size_t space2 = line.find(" ", space1 + 1);
     size_t space3 = line.find_last_of(" ");
@@ -160,26 +160,24 @@ int main(int argc, char* argv[]) {
     long long lat2 = stoll(line.substr(space2 + 1, space3 - space2 - 1));
     long long lon2 = stoll(line.substr(space3 + 1));
 
-    char c; // reading in the intial character. 
     Point sPoint, ePoint; // creating sturuct objects of type Point so then the lan and lon can be acessed right away. 
     sPoint.lat = lat1;
     sPoint.lon = lon1;
     ePoint.lat = lat2;
     ePoint.lon = lon2;
 
-    // c is guaranteed to be 'R' in part 1, no need to error check until part 2
+    // get the points closest to the two points we read
+    int start = findClosest(sPoint, points);
+    int end = findClosest(ePoint, points);
 
-  // get the points closest to the two points we read
-  int start = findClosest(sPoint, points), end = findClosest(ePoint, points);
-
-  // run dijkstra's, this is the unoptimized version that does not stop
-  // when the end is reached but it is still fast enough
-  unordered_map<int, PIL> tree;
-  dijkstra(graph, start, tree);
+    // run dijkstra's, this is the unoptimized version that does not stop
+    // when the end is reached but it is still fast enough
+    unordered_map<int, PIL> tree;
+    dijkstra(graph, start, tree);
 
   // no path
   if (tree.find(end) == tree.end()) {
-    string no_output ="N 0";
+    string no_output = "N 0";
     send(conn_socket_desc, no_output.c_str(), no_output.length() + 1, 0);
   }
   else {
@@ -196,33 +194,33 @@ int main(int argc, char* argv[]) {
     string len = to_string(path_size);
     string num_output = "N " + len;
     send(conn_socket_desc, num_output.c_str(), num_output.length() + 1, 0);
-    // NOTE: YOU SHOULDN"T EVEN SEND THE FIRST POINT BEFORE GETTING ACK
     for (int v : path) {
-      string lat = to_string(points[v].lat);
-      string lon = to_string(points[v].lon);
-      string waypoints = "W " + lat + " " + lon;
-      send(conn_socket_desc, waypoints.c_str(), waypoints.length() + 1, 0);
-
       // acknowledgement 
       int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
       string received_ack = echobuffer;
-      cout << "the acknowledgement received:" << endl;
-      cout << rereceived_ack << endl;
-      if (received_ack.find("A")) {
-        continue;
-      }
-      else{
+      if (received_ack == "A") {
+        string lat = to_string(points[v].lat);
+        string lon = to_string(points[v].lon);
+        string waypoints = "W " + lat + " " + lon;
+        send(conn_socket_desc, waypoints.c_str(), waypoints.length() + 1, 0);
+      } else{
         break;
       }
     }
-    string end_output = "E";
-    send(conn_socket_desc, end_output.c_str(), end_output.length() + 1, 0);
+    // acknowledgement 
+    int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+    string received_ack = echobuffer;
+    if (received_ack == "A") {
+      string end_output = "E";
+      send(conn_socket_desc, end_output.c_str(), end_output.length() + 1, 0);
+    }
   }
     // declare structure variable that represents an elapsed time 
     // it stores the number of whole seconds and the number of microseconds
   // TIMEOUT
     struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
     
+      // WHAT IS THIS FOR??
       while (true) {
         // blocking call - blocks until a message arrives 
         // (unless O_NONBLOCK is set on the socket's file descriptor)
