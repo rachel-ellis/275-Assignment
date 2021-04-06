@@ -147,109 +147,100 @@ int main(int argc, char* argv[]) {
       // continue;
       return 1;
     }
+    cout << "Connection request accepted from " << inet_ntoa(peer_addr.sin_addr);
+    cout << ":" << ntohs(peer_addr.sin_port) << "\n";
 
-    int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-    string line;
-    line = echobuffer;
-    // NEED TO ERROR CHECK THAT LINE STARTS WITH "R"
-    size_t space1 = line.find(" ", 2);
-    size_t space2 = line.find(" ", space1 + 1);
-    size_t space3 = line.find_last_of(" ");
-    long long lat1 = stoll(line.substr(2, space1 - 2));
-    long long lon1 = stoll(line.substr(space1 + 1, space2 - space1 - 1));
-    long long lat2 = stoll(line.substr(space2 + 1, space3 - space2 - 1));
-    long long lon2 = stoll(line.substr(space3 + 1));
-
-    Point sPoint, ePoint; // creating sturuct objects of type Point so then the lan and lon can be acessed right away. 
-    sPoint.lat = lat1;
-    sPoint.lon = lon1;
-    ePoint.lat = lat2;
-    ePoint.lon = lon2;
-
-    // get the points closest to the two points we read
-    int start = findClosest(sPoint, points);
-    int end = findClosest(ePoint, points);
-
-    // run dijkstra's, this is the unoptimized version that does not stop
-    // when the end is reached but it is still fast enough
-    unordered_map<int, PIL> tree;
-    dijkstra(graph, start, tree);
-
-  // no path
-  if (tree.find(end) == tree.end()) {
-    string no_output = "N 0";
-    send(conn_socket_desc, no_output.c_str(), no_output.length() + 1, 0);
-  }
-  else {
-    // read off the path by stepping back through the search tree
-    list<int> path;
-    while (end != start) {
-      path.push_front(end);
-      end = tree[end].first;
-    }
-    path.push_front(start);
-
-    // output the path
-    int path_size = path.size();
-    string len = to_string(path_size);
-    string num_output = "N " + len;
-    send(conn_socket_desc, num_output.c_str(), num_output.length() + 1, 0);
-    for (int v : path) {
-      // acknowledgement 
-      int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-      string received_ack = echobuffer;
-      if (received_ack == "A") {
-        string lat = to_string(points[v].lat);
-        string lon = to_string(points[v].lon);
-        string waypoints = "W " + lat + " " + lon;
-        send(conn_socket_desc, waypoints.c_str(), waypoints.length() + 1, 0);
-      } else{
-        break;
-      }
-    }
-    // acknowledgement 
-    int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-    string received_ack = echobuffer;
-    if (received_ack == "A") {
-      string end_output = "E";
-      send(conn_socket_desc, end_output.c_str(), end_output.length() + 1, 0);
-    }
-  }
     // declare structure variable that represents an elapsed time 
     // it stores the number of whole seconds and the number of microseconds
-  // TIMEOUT
     struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
-    
-      // WHAT IS THIS FOR??
-      while (true) {
-        // blocking call - blocks until a message arrives 
-        // (unless O_NONBLOCK is set on the socket's file descriptor)
-        int rec_size2 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-        if (rec_size2 == -1) {
-          std::cout << "Timeout occurred... still waiting!\n";
-          continue;
-        }
-       // std::cout << "Message received\n";
-        if (strcmp("Q\n", echobuffer) == 0) {
-          //std::cout << "Connection will be closed\n";
-          break;
-        }
 
-        // convert a c-style string to an integer
-        int num = atoi(echobuffer);
-        // change this to return waypoints 
-        // convert the integer to a string
-        string str = to_string(-num);
-        send(conn_socket_desc, str.c_str(), str.length() + 1, 0);
-        //std::cout << "Computation result sent back\n";
+    while (true) {
+      // blocking call - blocks until a message arrives 
+      // (unless O_NONBLOCK is set on the socket's file descriptor)
+      int rec_size2 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+      if (rec_size2 == -1) {
+        cout << "Timeout occurred... still waiting!\n";
+        continue;
       }
+      if (strcmp("Q\n", echobuffer) == 0) {
+        cout << "Connection will be closed\n";
+        break;
+      }
+      string line = echobuffer;
+
+      // check if line is valid
+      if (line.at(0) == 'R') {
+        size_t space1 = line.find(" ", 2);
+        size_t space2 = line.find(" ", space1 + 1);
+        size_t space3 = line.find_last_of(" ");
+        long long lat1 = stoll(line.substr(2, space1 - 2));
+        long long lon1 = stoll(line.substr(space1 + 1, space2 - space1 - 1));
+        long long lat2 = stoll(line.substr(space2 + 1, space3 - space2 - 1));
+        long long lon2 = stoll(line.substr(space3 + 1));
+
+        Point sPoint, ePoint;
+        sPoint.lat = lat1;
+        sPoint.lon = lon1;
+        ePoint.lat = lat2;
+        ePoint.lon = lon2;
+
+        // get the points closest to the two points we read
+        int start = findClosest(sPoint, points);
+        int end = findClosest(ePoint, points);
+
+        // run dijkstra's, this is the unoptimized version that does not stop
+        // when the end is reached but it is still fast enough
+        unordered_map<int, PIL> tree;
+        dijkstra(graph, start, tree);
+
+        // no path
+        if (tree.find(end) == tree.end()) {
+          string no_output = "N 0";
+          send(conn_socket_desc, no_output.c_str(), no_output.length() + 1, 0);
+        } else {
+          // read off the path by stepping back through the search tree
+          list<int> path;
+          while (end != start) {
+            path.push_front(end);
+            end = tree[end].first;
+          }
+          path.push_front(start);
+
+          // output the path
+          int path_size = path.size();
+          string len = to_string(path_size);
+          string num_output = "N " + len;
+          send(conn_socket_desc, num_output.c_str(), num_output.length() + 1, 0);
+          for (int v : path) {
+            // acknowledgement 
+            int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+            string received_ack = echobuffer;
+            if (received_ack == "A") {
+              string lat = to_string(points[v].lat);
+              string lon = to_string(points[v].lon);
+              string waypoints = "W " + lat + " " + lon;
+              send(conn_socket_desc, waypoints.c_str(), waypoints.length() + 1, 0);
+            } else{
+              break;
+            }
+          }
+          // acknowledgement 
+          int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+          string received_ack = echobuffer;
+          if (received_ack == "A") {
+            string end_output = "E";
+            send(conn_socket_desc, end_output.c_str(), end_output.length() + 1, 0);
+          }
+        }
+      }
+    }
+  
   }
 
   // close socket descriptors
-    close(lstn_socket_desc);
-    close(conn_socket_desc);
+  close(lstn_socket_desc);
+  close(conn_socket_desc);
   
-
   return 0;
 }
  

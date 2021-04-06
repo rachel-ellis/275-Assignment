@@ -11,6 +11,7 @@
 using namespace std;
 
 // NOTE, client takes the port and IP address in as input!!!
+// OTHER TO DO: deal with errors and timeout
 
 #define BUFFER_SIZE 2024
 #define SERVER_PORT 8888
@@ -47,12 +48,6 @@ int main(int argc, char const *argv[]) {
     cout << "inpipe opened..." << endl;
     int out = create_and_open_fifo(outpipe, O_WRONLY);
     cout << "outpipe opened..." << endl;
-
-    // Here is what you need to do:
-    // 2. Read coordinates of start and end points from inpipe
-    // 3. Write to the socket
-    // 4. Read coordinates of waypoints one at a time
-    // 5. Write these coordinates to outpipe
 
     // Declare structure variables that store local and peer socket addresses
     // sockaddr_in is the address sturcture used for IPv4 
@@ -104,24 +99,34 @@ int main(int argc, char const *argv[]) {
         // read in the coordinates of the start and end point
         int bytes_read;
         // ensure that outbound is empty
-        outbound[0] = '\0';
+        memset(outbound, '\0', sizeof outbound); 
         bytes_read = read(in, outbound, 22);
+        cout << bytes_read << endl;
 
         if (strcmp("Q\n", outbound) == 0) {
             send(socket_desc, outbound, strlen(outbound) + 1, 0);
             break;
         }
 
-        string pt1 = string(outbound);
+        string pt1 = outbound;
         // empty outbound
-        outbound[0] = '\0';
+        memset(outbound, '\0', sizeof outbound); 
         bytes_read = read(in, outbound, 22);
-        string pt2 = string(outbound);
+        string pt2 = outbound;
+        cout << bytes_read << endl;
+
+        //cout << pt1 << endl;
+        //cout << pt2 << endl;
 
         // remove the newline character
-        pt1 = pt1.substr(0,pt1.length()-1);
-        pt2 = pt2.substr(0,pt2.length()-1);
+        if (pt1.at(pt1.length()-1) == '\n') {
+        	pt1 = pt1.substr(0,pt1.length()-1);
+        }
 
+        if (pt2.at(pt2.length()-1) == '\n') {
+        	pt2 = pt2.substr(0,pt2.length()-1);
+        }
+        
         // parse the strings to do the necessary conversions
         size_t space = pt1.find(" ");
         auto lat1 = static_cast<long long>(stod(pt1.substr(0, space-1))*100000);
@@ -163,14 +168,17 @@ int main(int argc, char const *argv[]) {
         
         // WRONG INPUT WILL CAUSE THIS WHOLE PROCESS TO RESTART??
         // I FEEL LIKE I NEED A FUNCTION TO IMPLEMENT THAT THEN???
-
-        
         string points;
         while (true) {
+        	if (num == 0) {
+        		break;
+        	}
             // send acknowledgement
             string s = "A";
             strcpy(outbound, s.c_str());
             send(socket_desc, outbound, strlen(outbound) + 1, 0);
+            // empty inbound
+        	memset(inbound, '\0', sizeof outbound); 
             int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
             string input = string(inbound);
             if (input.at(0) == 'W') {
@@ -186,15 +194,18 @@ int main(int argc, char const *argv[]) {
                 break;
             }
         }
-        if (!points.empty()) {
-        	strcpy(inbound, points.c_str());
-        } else {
+
+        if (points.empty()) {
         	char array1[] = "E\n";
             strcpy(inbound, array1);
+            cout << "no path case" << endl;
+        } else {
+            strcpy(inbound, points.c_str());
         }
-        // cout << points << endl;
         // write waypoints to plotter
-        write_bytes = write(out, inbound, sizeof inbound);
+        write_bytes = write(out, inbound, strlen(inbound));
+        cout << write_bytes << endl;
+        memset(inbound, '\0', sizeof inbound); 
     }
 
     // close socket
