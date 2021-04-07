@@ -10,9 +10,11 @@
 #include <sys/socket.h>     // socket, connect
 using namespace std;
 
-// TO DO: deal with errors and timeout and MAKEFILE!!
+// TO DO: deal with errors and timeout
+// Currently I changed the buffer size so that I can write all waypoints
+// at once to the plotter (outpipe). Is this okay or should I write points individually?
 
-#define BUFFER_SIZE 5000
+#define BUFFER_SIZE 10000
 // #define SERVER_PORT 8888
 // #define SERVER_IP "127.0.0.1"
 
@@ -21,22 +23,22 @@ int create_and_open_fifo(const char * pname, int mode) {
     // with read-write permissions for communication with the plotter
     // both proecsses must open the fifo before they can perform
     // read and write operations on it
-    if (mkfifo(pname, 0666) == -1) {
-        cout << "Unable to make a fifo. Ensure that this pipe does not exist already!" << endl;
-        exit(-1);
-    }
+	if (mkfifo(pname, 0666) == -1) {
+		cout << "Unable to make a fifo. Ensure that this pipe does not exist already!" << endl;
+		exit(-1);
+	}
 
     // opening the fifo for read-only or write-only access
     // a file descriptor that refers to the open file description is
     // returned
-    int fd = open(pname, mode);
+	int fd = open(pname, mode);
 
-    if (fd == -1) {
-        cout << "Error: failed on opening named pipe." << endl;
-        exit(-1);
-    }
+	if (fd == -1) {
+		cout << "Error: failed on opening named pipe." << endl;
+		exit(-1);
+	}
 
-    return fd;
+	return fd;
 }
 
 int main(int argc, char const *argv[]) {
@@ -49,27 +51,27 @@ int main(int argc, char const *argv[]) {
 	// get the IPv4 address and port number from argv
 	int SERVER_PORT = atoi(argv[1]);
 	const char * SERVER_IP = argv[2];
-    const char *inpipe = "inpipe";
-    const char *outpipe = "outpipe";
+	const char *inpipe = "inpipe";
+	const char *outpipe = "outpipe";
 
-    int in = create_and_open_fifo(inpipe, O_RDONLY);
-    cout << "inpipe opened..." << endl;
-    int out = create_and_open_fifo(outpipe, O_WRONLY);
-    cout << "outpipe opened..." << endl;
+	int in = create_and_open_fifo(inpipe, O_RDONLY);
+	cout << "inpipe opened..." << endl;
+	int out = create_and_open_fifo(outpipe, O_WRONLY);
+	cout << "outpipe opened..." << endl;
 
     // Declare structure variables that store local and peer socket addresses
     // sockaddr_in is the address sturcture used for IPv4 
     // sockaddr is the protocol independent address structure
-    struct sockaddr_in my_addr, peer_addr;
+	struct sockaddr_in my_addr, peer_addr;
 
     // zero out the structor variable because it has an unused part
-    memset(&my_addr, '\0', sizeof my_addr);
+	memset(&my_addr, '\0', sizeof my_addr);
 
     // Declare socket descriptor
-    int socket_desc;
+	int socket_desc;
 
-    char outbound[BUFFER_SIZE] = {};
-    char inbound[BUFFER_SIZE] = {};
+	char outbound[BUFFER_SIZE] = {};
+	char inbound[BUFFER_SIZE] = {};
 
     /*
         socket() input arguments are:
@@ -80,11 +82,11 @@ int main(int argc, char const *argv[]) {
                                     socket type (in this case: IPPROTO_TCP)
         socket() returns a socket descriptor
     */
-    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_desc == -1) {
-        cerr << "Listening socket creation failed!\n";
-        return 1;
-    }
+	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+	if (socket_desc == -1) {
+		cerr << "Listening socket creation failed!\n";
+		return 1;
+	}
 
     // Prepare sockaddr_in structure variable
     peer_addr.sin_family = AF_INET;  // address family (2 bytes)
@@ -97,118 +99,141 @@ int main(int argc, char const *argv[]) {
 
     // connecting to the server socket
     if (connect(socket_desc, (struct sockaddr *) &peer_addr, sizeof peer_addr) == -1) {
-        cerr << "Cannot connect to the host!\n";
-        close(socket_desc);
-        return 1;
+    	cerr << "Cannot connect to the host!\n";
+    	close(socket_desc);
+    	return 1;
     }
     cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
 
     while (true) {
         // read in the coordinates of the start and end point
-        int bytes_read;
+    	int bytes_read;
         // ensure that outbound is empty
-        memset(outbound, '\0', sizeof outbound); 
-        bytes_read = read(in, outbound, 22);
+    	memset(outbound, '\0', sizeof outbound); 
+    	bytes_read = read(in, outbound, 22);
 
-        if (strcmp("Q\n", outbound) == 0) {
-            send(socket_desc, outbound, strlen(outbound) + 1, 0);
-            break;
-        }
+    	if (strcmp("Q\n", outbound) == 0) {
+    		send(socket_desc, outbound, strlen(outbound) + 1, 0);
+    		break;
+    	}
 
-        string pt1 = outbound;
+    	string pt1 = outbound;
         // empty outbound
-        memset(outbound, '\0', sizeof outbound); 
-        bytes_read = read(in, outbound, 22);
-        string pt2 = outbound;
-        
+    	memset(outbound, '\0', sizeof outbound); 
+    	bytes_read = read(in, outbound, 22);
+    	string pt2 = outbound;
+
         // remove the newline character
-        if (pt1.at(pt1.length()-1) == '\n') {
-        	pt1 = pt1.substr(0,pt1.length()-1);
-        }
+    	if (pt1.at(pt1.length()-1) == '\n') {
+    		pt1 = pt1.substr(0,pt1.length()-1);
+    	}
 
-        if (pt2.at(pt2.length()-1) == '\n') {
-        	pt2 = pt2.substr(0,pt2.length()-1);
-        }
-        
+    	if (pt2.at(pt2.length()-1) == '\n') {
+    		pt2 = pt2.substr(0,pt2.length()-1);
+    	}
+
         // parse the strings to do the necessary conversions
-        size_t space = pt1.find(" ");
-        auto lat1 = static_cast<long long>(stod(pt1.substr(0, space-1))*100000);
-        auto lon1 = static_cast<long long>(stod(pt1.substr(space+1))*100000);
+    	size_t space = pt1.find(" ");
+    	auto lat1 = static_cast<long long>(stod(pt1.substr(0, space-1))*100000);
+    	auto lon1 = static_cast<long long>(stod(pt1.substr(space+1))*100000);
 
-        space = pt2.find(" ");
-        auto lat2 = static_cast<long long>(stod(pt2.substr(0, space-1))*100000);
-        auto lon2 = static_cast<long long>(stod(pt2.substr(space+1))*100000);
+    	space = pt2.find(" ");
+    	auto lat2 = static_cast<long long>(stod(pt2.substr(0, space-1))*100000);
+    	auto lon2 = static_cast<long long>(stod(pt2.substr(space+1))*100000);
+
+        // we add a loop here as this is the restarting point if an error
+        // message or timeout occurs
+        bool reset = false;
+    	while (true) {
+
+        	// add info back to outbound to write to the socket
+    		string ans = "R " + to_string(lat1) + " " + to_string(lon1);
+    		ans += + " " + to_string(lat2) + " " + to_string(lon2);
+    		strcpy(outbound, ans.c_str());
+    		send(socket_desc, outbound, strlen(outbound) + 1, 0);
+    		memset(outbound, '\0', sizeof inbound);
+
+    		int write_bytes, num;
+
+    		while (true) {
+            	// blocking call
+    			int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
+    			cout << "Received: " << inbound << endl;
+    			if (strcmp(inbound, "N 0") == 0) {
+    				num = 0;
+    				break;
+    			} else {
+    				string input = string(inbound);
+    				if (input.at(0) = 'N') {
+    					try {
+    						num = stoi(input.substr(2));
+    					} catch (...) {
+    						// case where remaining string is not a number
+    						reset = true;
+    					}
+    					break;
+    				} else {
+    					// message is invalid/unexpected
+    					reset = true;
+    					break;
+    				}
+    			}
+    		}
+
+    		if (reset) {
+    			continue;
+    		}
+
+    		// get the path (if one exist)
+    		string points;
+    		while (true) {
+    			if (num == 0) {
+    				break;
+    			}
+            	// send acknowledgement
+    			string s = "A";
+    			strcpy(outbound, s.c_str());
+    			send(socket_desc, outbound, strlen(outbound) + 1, 0);
+            	// empty inbound
+    			memset(inbound, '\0', sizeof inbound); 
+    			int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
+    			string input = string(inbound);
+    			if (input.at(0) == 'W') {
+    				size_t space1 = input.find(" ", 2);
+                	// conversion back
+    				double pt_lat = (double)stoll(input.substr(2, space1 - 1));
+    				double pt_lon = (double)stoll(input.substr(space1 + 1));
+    				pt_lat /= 100000;
+    				pt_lon /= 100000;
+    				points += to_string(pt_lat) + " " + to_string(pt_lon) + "\n";
+    			} else if (input == "E") {
+    				points += input + "\n";
+    				break;
+    			} else {
+    				// unexpected message
+    				reset = true;
+    				break;
+    			}
+    		}
+
+    		if (reset) {
+    			continue;
+    		}
+
+    		if (points.empty()) {
+    			char array1[] = "E\n";
+    			strcpy(inbound, array1);
+    		} else {
+    			strcpy(inbound, points.c_str());
+    		}
+        	// write waypoints to plotter
+    		write_bytes = write(out, inbound, strlen(inbound));
+    		cout << write_bytes << endl;
+    		memset(inbound, '\0', sizeof inbound); 
+    		break;  // no expected messages, path was found properly
         
-        // add info back to outbound to write to the socket
-        string ans = "R " + to_string(lat1) + " " + to_string(lon1);
-        ans += + " " + to_string(lat2) + " " + to_string(lon2);
-        strcpy(outbound, ans.c_str());
-        send(socket_desc, outbound, strlen(outbound) + 1, 0);
-
-        int write_bytes;
-        int num;
-        while (true) {
-            // blocking call
-            int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
-            cout << "Received: " << inbound << endl;
-            if (strcmp(inbound, "N 0") == 0) {
-                num = 0;
-                break;
-            } else {
-                string input = string(inbound);
-                if (input.at(0) = 'N') {
-                    num = stoi(input.substr(2));
-                    // I HAVE TO MAKE SURE THE STRING IS A NUMBER !!!
-                    break;
-                } else {
-                    // received input is invalid
-                    // resend the request with the start and end point
-                    // and loop until inbound is valid
-                    send(socket_desc, outbound, strlen(outbound) + 1, 0);
-                }
-            }
-        }
-        memset(outbound, '\0', sizeof inbound);
-        // WRONG INPUT WILL CAUSE THIS WHOLE PROCESS TO RESTART??
-        // I FEEL LIKE I NEED A FUNCTION TO IMPLEMENT THAT THEN???
-        string points;
-        while (true) {
-        	if (num == 0) {
-        		break;
-        	}
-            // send acknowledgement
-            string s = "A";
-            strcpy(outbound, s.c_str());
-            send(socket_desc, outbound, strlen(outbound) + 1, 0);
-            // empty inbound
-        	memset(inbound, '\0', sizeof inbound); 
-            int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
-            string input = string(inbound);
-            if (input.at(0) == 'W') {
-                size_t space1 = input.find(" ", 2);
-                // conversion back
-                double pt_lat = (double)stoll(input.substr(2, space1 - 1));
-                double pt_lon = (double)stoll(input.substr(space1 + 1));
-                pt_lat /= 100000;
-                pt_lon /= 100000;
-                points += to_string(pt_lat) + " " + to_string(pt_lon) + "\n";
-            } else if (input == "E") {
-                points += input + "\n";
-                break;
-            }
-        }
-
-        if (points.empty()) {
-        	char array1[] = "E\n";
-            strcpy(inbound, array1);
-            cout << "no path case" << endl;
-        } else {
-            strcpy(inbound, points.c_str());
-        }
-        // write waypoints to plotter
-        write_bytes = write(out, inbound, strlen(inbound));
-        cout << write_bytes << endl;
-        memset(inbound, '\0', sizeof inbound); 
+        } // end of reset state loop
+    
     }
 
     // close socket

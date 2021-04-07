@@ -15,7 +15,7 @@ using namespace std;
 
 // #define PORT 8888
 #define LISTEN_BACKLOG 50
-#define BUFFER_SIZE 5000
+#define BUFFER_SIZE 10000
 
 struct Point {
   long long lat, lon;
