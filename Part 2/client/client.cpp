@@ -10,12 +10,11 @@
 #include <sys/socket.h>     // socket, connect
 using namespace std;
 
-// NOTE, client takes the port and IP address in as input!!!
-// OTHER TO DO: deal with errors and timeout
+// TO DO: deal with errors and timeout and MAKEFILE!!
 
-#define BUFFER_SIZE 2024
-#define SERVER_PORT 8888
-#define SERVER_IP "127.0.0.1"
+#define BUFFER_SIZE 5000
+// #define SERVER_PORT 8888
+// #define SERVER_IP "127.0.0.1"
 
 int create_and_open_fifo(const char * pname, int mode) {
     // creating a fifo special file in the current working directory
@@ -41,6 +40,15 @@ int create_and_open_fifo(const char * pname, int mode) {
 }
 
 int main(int argc, char const *argv[]) {
+	// check argument count
+	if (argc != 3) {
+		cout << "This program needs two command line arguments" << endl;
+		return 0;
+	}
+
+	// get the IPv4 address and port number from argv
+	int SERVER_PORT = atoi(argv[1]);
+	const char * SERVER_IP = argv[2];
     const char *inpipe = "inpipe";
     const char *outpipe = "outpipe";
 
@@ -101,7 +109,6 @@ int main(int argc, char const *argv[]) {
         // ensure that outbound is empty
         memset(outbound, '\0', sizeof outbound); 
         bytes_read = read(in, outbound, 22);
-        cout << bytes_read << endl;
 
         if (strcmp("Q\n", outbound) == 0) {
             send(socket_desc, outbound, strlen(outbound) + 1, 0);
@@ -113,11 +120,7 @@ int main(int argc, char const *argv[]) {
         memset(outbound, '\0', sizeof outbound); 
         bytes_read = read(in, outbound, 22);
         string pt2 = outbound;
-        cout << bytes_read << endl;
-
-        //cout << pt1 << endl;
-        //cout << pt2 << endl;
-
+        
         // remove the newline character
         if (pt1.at(pt1.length()-1) == '\n') {
         	pt1 = pt1.substr(0,pt1.length()-1);
@@ -155,7 +158,7 @@ int main(int argc, char const *argv[]) {
                 string input = string(inbound);
                 if (input.at(0) = 'N') {
                     num = stoi(input.substr(2));
-                    // DO I HAVE TO MAKE SURE THE STRING IS A NUMBER???
+                    // I HAVE TO MAKE SURE THE STRING IS A NUMBER !!!
                     break;
                 } else {
                     // received input is invalid
@@ -165,7 +168,7 @@ int main(int argc, char const *argv[]) {
                 }
             }
         }
-        
+        memset(outbound, '\0', sizeof inbound);
         // WRONG INPUT WILL CAUSE THIS WHOLE PROCESS TO RESTART??
         // I FEEL LIKE I NEED A FUNCTION TO IMPLEMENT THAT THEN???
         string points;
@@ -178,7 +181,7 @@ int main(int argc, char const *argv[]) {
             strcpy(outbound, s.c_str());
             send(socket_desc, outbound, strlen(outbound) + 1, 0);
             // empty inbound
-        	memset(inbound, '\0', sizeof outbound); 
+        	memset(inbound, '\0', sizeof inbound); 
             int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
             string input = string(inbound);
             if (input.at(0) == 'W') {
