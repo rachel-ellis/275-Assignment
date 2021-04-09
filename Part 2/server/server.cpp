@@ -162,6 +162,12 @@ int main(int argc, char* argv[]) {
   // it stores the number of whole seconds and the number of microseconds
   struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
 
+  if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (void *) &timer, sizeof(timer)) == -1) {
+    cerr << "Cannot set socket options!\n";
+    close(conn_socket_desc);
+    return 1;
+  }
+
   while (true) {
     // blocking call - blocks until a message arrives 
     // (unless O_NONBLOCK is set on the socket's file descriptor)

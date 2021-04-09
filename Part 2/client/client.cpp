@@ -10,7 +10,7 @@
 #include <sys/socket.h>     // socket, connect
 using namespace std;
 
-// TO DO: deal with errors and timeout
+// TO DO: timeout
 // Currently I changed the buffer size so that I can write all waypoints
 // at once to the plotter (outpipe). Is this okay or should I write points individually?
 
@@ -105,6 +105,16 @@ int main(int argc, char const *argv[]) {
     }
     cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
 
+    // declare structure variable that represents an elapsed time 
+  	// it stores the number of whole seconds and the number of microseconds
+  	struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
+
+  	if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (void *) &timer, sizeof(timer)) == -1) {
+    	cerr << "Cannot set socket options!\n";
+    	close(conn_socket_desc);
+    	return 1;
+  	}
+
     while (true) {
         // read in the coordinates of the start and end point
     	int bytes_read;
@@ -186,6 +196,7 @@ int main(int argc, char const *argv[]) {
 
     		// get the path (if one exist)
     		string points;
+    		// NEED TIMEOUTS HERE
     		while (true) {
     			if (num == 0) {
     				break;
