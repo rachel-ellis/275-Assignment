@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
   // return a new connection socket descriptor which is not in the listening state
   conn_socket_desc = accept(lstn_socket_desc, (struct sockaddr *) &peer_addr, &peer_addr_size);
   if (conn_socket_desc == -1){
-    std::cerr << "Connection socket creation failed!\n";
+    cerr << "Connection socket creation failed!\n";
     // continue;
     return 1;
   }

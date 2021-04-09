@@ -165,9 +165,15 @@ int main(int argc, char const *argv[]) {
 
     		int write_bytes, num;
 
+    		// DO I NEED THIS WHILE LOOP?? - I BREAK IN EVERY CASE ANYWAYS
     		while (true) {
             	// blocking call
     			int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
+    			if (rec_size == -1) {
+      				cout << "Timeout occurred... still waiting!" << endl;
+      				reset = true;
+      				break;
+    			}
     			cout << "Received: " << inbound << endl;
     			if (strcmp(inbound, "N 0") == 0) {
     				num = 0;
@@ -196,7 +202,6 @@ int main(int argc, char const *argv[]) {
 
     		// get the path (if one exist)
     		string points;
-    		// NEED TIMEOUTS HERE
     		while (true) {
     			if (num == 0) {
     				break;
@@ -208,6 +213,11 @@ int main(int argc, char const *argv[]) {
             	// empty inbound
     			memset(inbound, '\0', sizeof inbound); 
     			int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
+    			if (rec_size == -1) {
+      				cout << "Timeout occurred... still waiting!" << endl;
+      				reset = true;
+      				break;
+    			}
     			string input = string(inbound);
     			if (input.at(0) == 'W') {
     				size_t space1 = input.find(" ", 2);
