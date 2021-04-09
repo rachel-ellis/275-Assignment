@@ -160,8 +160,9 @@ int main(int argc, char* argv[]) {
 
   // declare structure variable that represents an elapsed time 
   // it stores the number of whole seconds and the number of microseconds
+  // TIME OUT ERROR 
   struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
-
+  //  this struct will record the time required between recieve calls 
   if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (void *) &timer, sizeof(timer)) == -1) {
     cerr << "Cannot set socket options!\n";
     close(conn_socket_desc);
@@ -170,9 +171,9 @@ int main(int argc, char* argv[]) {
 
   while (true) {
     // blocking call - blocks until a message arrives 
-    // (unless O_NONBLOCK is set on the socket's file descriptor)
-    int rec_size2 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-    if (rec_size2 == -1) {
+    // (unless O_NONBLOCK is set on the socket's file descriptor)   
+    int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+    if (rec_size == -1) {
       cout << "Timeout occurred... still waiting!\n";
       continue;
     }
@@ -227,7 +228,11 @@ int main(int argc, char* argv[]) {
         send(conn_socket_desc, num_output.c_str(), num_output.length() + 1, 0);
         for (int v : path) {
           // acknowledgement 
-          int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+          int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+          if (rec_size == -1) {
+            cout << "Timeout occurred... still waiting!\n";
+            continue;
+          }
           string received_ack = echobuffer;
           if (received_ack == "A") {
             string lat = to_string(points[v].lat);
@@ -239,7 +244,11 @@ int main(int argc, char* argv[]) {
           }
         }
         // acknowledgement 
-        int rec_size1 = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+        int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+        if (rec_size == -1) {
+          cout << "Timeout occurred... still waiting!\n";
+          continue;
+        }
         string received_ack = echobuffer;
         if (received_ack == "A") {
           string end_output = "E";
@@ -254,4 +263,3 @@ int main(int argc, char* argv[]) {
   close(conn_socket_desc);
   return 0;
 }
-
