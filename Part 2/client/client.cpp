@@ -50,7 +50,8 @@ int main(int argc, char const *argv[]) {
 
 	// get the IPv4 address and port number from argv
 	int SERVER_PORT = atoi(argv[1]);
-	const char * SERVER_IP = argv[2];
+	const char *SERVER_IP = argv[2];
+
 	const char *inpipe = "inpipe";
 	const char *outpipe = "outpipe";
 
@@ -107,11 +108,10 @@ int main(int argc, char const *argv[]) {
 
     // declare structure variable that represents an elapsed time 
   	// it stores the number of whole seconds and the number of microseconds
-  	struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
-
-  	if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (void *) &timer, sizeof(timer)) == -1) {
+  	struct timeval timer = {.tv_sec = 1, .tv_usec = 0};
+  	if (setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
     	cerr << "Cannot set socket options!\n";
-    	close(conn_socket_desc);
+    	close(socket_desc);
     	return 1;
   	}
 
@@ -151,56 +151,50 @@ int main(int argc, char const *argv[]) {
     	auto lat2 = static_cast<long long>(stod(pt2.substr(0, space-1))*100000);
     	auto lon2 = static_cast<long long>(stod(pt2.substr(space+1))*100000);
 
-        // we add a loop here as this is the restarting point if an error
-        // message or timeout occurs
-        bool reset = false;
-    	while (true) {
+    	int num; // num of waypoints
 
+        // we add a loop here as this is the starting point if an error
+        // message or timeout occurs
+    	while (true) {
+    		bool reset = false;
         	// add info back to outbound to write to the socket
     		string ans = "R " + to_string(lat1) + " " + to_string(lon1);
     		ans += + " " + to_string(lat2) + " " + to_string(lon2);
     		strcpy(outbound, ans.c_str());
     		send(socket_desc, outbound, strlen(outbound) + 1, 0);
-    		memset(outbound, '\0', sizeof inbound);
+    		memset(outbound, '\0', sizeof outbound);
 
-    		int write_bytes, num;
+    		// blocking call
+            timer = {.tv_sec = 1, .tv_usec = 0};
+            if (setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
+    			cerr << "Cannot set socket options!\n";
+    			close(socket_desc);
+    			return 1;
+  			}
+    		int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
+    		if (rec_size == -1) {
+      			cout << "Timeout occurred... still waiting!" << endl;
+      			continue;
+    		}
 
-    		// DO I NEED THIS WHILE LOOP?? - I BREAK IN EVERY CASE ANYWAYS
-    		while (true) {
-            	// blocking call
-    			int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
-    			if (rec_size == -1) {
-      				cout << "Timeout occurred... still waiting!" << endl;
-      				reset = true;
-      				break;
-    			}
-    			cout << "Received: " << inbound << endl;
-    			if (strcmp(inbound, "N 0") == 0) {
-    				num = 0;
-    				break;
-    			} else {
-    				string input = string(inbound);
-    				if (input.at(0) = 'N') {
-    					try {
-    						num = stoi(input.substr(2));
-    					} catch (...) {
-    						// case where remaining string is not a number
-    						reset = true;
-    					}
-    					break;
-    				} else {
-    					// message is invalid/unexpected
-    					reset = true;
-    					break;
+    		if (strcmp(inbound, "N 0") == 0 ) {
+    			num = 0;
+    		} else {
+    			string input = string(inbound);
+    			if (input.at(0) = 'N') {
+    				try {
+    					num = stoi(input.substr(2));
+    				} catch (...) {
+    					// case where remaining string is not a number
+    					continue;
     				}
+    			} else {
+    				// message is invalid/unexpected
+    				continue;
     			}
     		}
 
-    		if (reset) {
-    			continue;
-    		}
-
-    		// get the path (if one exist)
+    		// get the path if one exists
     		string points;
     		while (true) {
     			if (num == 0) {
@@ -208,10 +202,16 @@ int main(int argc, char const *argv[]) {
     			}
             	// send acknowledgement
     			string s = "A";
-    			strcpy(outbound, s.c_str());
-    			send(socket_desc, outbound, strlen(outbound) + 1, 0);
+    			// strcpy(outbound, s.c_str());
+    			send(socket_desc, s.c_str(), s.size() + 1, 0);
             	// empty inbound
     			memset(inbound, '\0', sizeof inbound); 
+    			timer = {.tv_sec = 1, .tv_usec = 0};
+    			if (setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
+    				cerr << "Cannot set socket options!\n";
+    				close(socket_desc);
+    				return 1;
+  				}
     			int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
     			if (rec_size == -1) {
       				cout << "Timeout occurred... still waiting!" << endl;
@@ -241,15 +241,15 @@ int main(int argc, char const *argv[]) {
     			continue;
     		}
 
-    		if (points.empty()) {
+    		// check which case we have (path of waypoints or no path)
+    		if (points.empty() || num == 1) {
     			char array1[] = "E\n";
     			strcpy(inbound, array1);
     		} else {
     			strcpy(inbound, points.c_str());
     		}
-        	// write waypoints to plotter
-    		write_bytes = write(out, inbound, strlen(inbound));
-    		cout << write_bytes << endl;
+        	// write waypoints (if any) to plotter
+    		int write_bytes = write(out, inbound, strlen(inbound));
     		memset(inbound, '\0', sizeof inbound); 
     		break;  // no expected messages, path was found properly
         

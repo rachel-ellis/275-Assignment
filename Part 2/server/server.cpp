@@ -160,10 +160,9 @@ int main(int argc, char* argv[]) {
 
   // declare structure variable that represents an elapsed time 
   // it stores the number of whole seconds and the number of microseconds
-  // TIME OUT ERROR 
-  struct timeval timer = {.tv_sec = 1, .tv_usec = 10000};
+  struct timeval timer = {.tv_sec = 1, .tv_usec = 0};
   //  this struct will record the time required between recieve calls 
-  if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (void *) &timer, sizeof(timer)) == -1) {
+  if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
     cerr << "Cannot set socket options!\n";
     close(conn_socket_desc);
     return 1;
@@ -171,20 +170,17 @@ int main(int argc, char* argv[]) {
 
   while (true) {
     // blocking call - blocks until a message arrives 
-    // (unless O_NONBLOCK is set on the socket's file descriptor)   
+    // (unless O_NONBLOCK is set on the socket's file descriptor)
+    memset(echobuffer, '\0', sizeof echobuffer);
     int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-    if (rec_size == -1) {
-      cout << "Timeout occurred... still waiting!\n";
-      continue;
-    }
     if (strcmp("Q\n", echobuffer) == 0) {
       cout << "Connection will be closed\n";
       break;
     }
-    string line = echobuffer;
-
-    // check if line is valid
-    if (line.at(0) == 'R') {
+    // check if received message is valid
+    if (echobuffer[0] == 'R') {
+      // parse the request line
+      string line = echobuffer;
       size_t space1 = line.find(" ", 2);
       size_t space2 = line.find(" ", space1 + 1);
       size_t space3 = line.find_last_of(" ");
@@ -209,9 +205,11 @@ int main(int argc, char* argv[]) {
       dijkstra(graph, start, tree);
 
       // no path
+      int path_size = 0;
       if (tree.find(end) == tree.end()) {
         string no_output = "N 0";
-        send(conn_socket_desc, no_output.c_str(), no_output.length() + 1, 0);
+        cout << no_output << endl;
+        send(conn_socket_desc, no_output.c_str(), no_output.size() + 1, 0);
       } else {
         // read off the path by stepping back through the search tree
         list<int> path;
@@ -222,12 +220,52 @@ int main(int argc, char* argv[]) {
         path.push_front(start);
 
         // output the path
-        int path_size = path.size();
+        path_size = path.size();
         string len = to_string(path_size);
         string num_output = "N " + len;
-        send(conn_socket_desc, num_output.c_str(), num_output.length() + 1, 0);
+        send(conn_socket_desc, num_output.c_str(), num_output.size() + 1, 0);
+        bool reset = false;
+
         for (int v : path) {
-          // acknowledgement 
+          // acknowledgement
+          timer = {.tv_sec = 1, .tv_usec = 0}; 
+          if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
+            cerr << "Cannot set socket options!\n";
+            close(conn_socket_desc);
+            return 1;
+          }
+          memset(echobuffer, '\0', sizeof echobuffer);
+          int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
+          if (rec_size == -1) {
+            cout << "Timeout occurred... still waiting!\n";
+            reset = true;
+            break;
+          }
+          string received_ack = echobuffer;
+          if (received_ack == "A") {
+            string lat = to_string(points[v].lat);
+            string lon = to_string(points[v].lon);
+            string waypoints = "W " + lat + " " + lon;
+            send(conn_socket_desc, waypoints.c_str(), waypoints.size() + 1, 0);
+          } else {
+            // unexpected message
+            reset = true;
+            break;
+          }
+        }
+
+        if (reset) {
+          continue;
+        }
+        // final acknowledgement (if there were waypoints)
+        if (path_size) {
+          timer = {.tv_sec = 1, .tv_usec = 0}; 
+          if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
+            cerr << "Cannot set socket options!\n";
+            close(conn_socket_desc);
+            return 1;
+          }
+          memset(echobuffer, '\0', sizeof echobuffer);
           int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
           if (rec_size == -1) {
             cout << "Timeout occurred... still waiting!\n";
@@ -235,25 +273,14 @@ int main(int argc, char* argv[]) {
           }
           string received_ack = echobuffer;
           if (received_ack == "A") {
-            string lat = to_string(points[v].lat);
-            string lon = to_string(points[v].lon);
-            string waypoints = "W " + lat + " " + lon;
-            send(conn_socket_desc, waypoints.c_str(), waypoints.length() + 1, 0);
+            string end_output = "E";
+            send(conn_socket_desc, end_output.c_str(), end_output.size() + 1, 0);
+            continue; // no expected messages or timeouts
           } else {
-            break;
+            continue;
           }
         }
-        // acknowledgement 
-        int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
-        if (rec_size == -1) {
-          cout << "Timeout occurred... still waiting!\n";
-          continue;
-        }
-        string received_ack = echobuffer;
-        if (received_ack == "A") {
-          string end_output = "E";
-          send(conn_socket_desc, end_output.c_str(), end_output.length() + 1, 0);
-        }
+        
       }
     }
   }
