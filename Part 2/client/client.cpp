@@ -162,15 +162,9 @@ int main(int argc, char const *argv[]) {
     		ans += + " " + to_string(lat2) + " " + to_string(lon2);
     		strcpy(outbound, ans.c_str());
     		send(socket_desc, outbound, strlen(outbound) + 1, 0);
-    		memset(outbound, '\0', sizeof outbound);
+    		memset(outbound, '\0', sizeof outbound); // empty the buffer
 
     		// blocking call
-            timer = {.tv_sec = 1, .tv_usec = 0};
-            if (setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
-    			cerr << "Cannot set socket options!\n";
-    			close(socket_desc);
-    			return 1;
-  			}
     		int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
     		if (rec_size == -1) {
       			cout << "Timeout occurred... still waiting!" << endl;
@@ -202,16 +196,9 @@ int main(int argc, char const *argv[]) {
     			}
             	// send acknowledgement
     			string s = "A";
-    			// strcpy(outbound, s.c_str());
     			send(socket_desc, s.c_str(), s.size() + 1, 0);
             	// empty inbound
     			memset(inbound, '\0', sizeof inbound); 
-    			timer = {.tv_sec = 1, .tv_usec = 0};
-    			if (setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
-    				cerr << "Cannot set socket options!\n";
-    				close(socket_desc);
-    				return 1;
-  				}
     			int rec_size = recv(socket_desc, inbound, BUFFER_SIZE, 0);
     			if (rec_size == -1) {
       				cout << "Timeout occurred... still waiting!" << endl;

@@ -1,48 +1,52 @@
 Name: Anushka Khare and Rachel Ellis
-ID: 1617774  and 1618966
+ID: 1617774 and 1618966
 CMPUT 275 Winter 2021
 Assignment 1 Part 2 — Trivial Navigation System
 
 
 We did the Assignment with some help from TAs during office hours but other than that we received no other help.
 
-Included Files :
+Included Files:
 Makefile 
 README
+edmonton-roads-2.0.1.txt
+plotter
+link_emulator
 client directory
 	clent.cpp
 server directory
 	digraph.h
-	edmonton-roads-2.0.1.txt
 	digraph.cpp
 	server.cpp
 	heap.h
 	dijkstra.cpp
 	dijkstra.h
 
-plotter
-link_emulator
-
 
 Makefile Targets:
-- make server: Builds the project. And directs the data from the edmonton-roads-2.0.1.txt to make the graph. 
-It futher opens three terminals, one to run the server.cpp file one to run the client.cpp and the third one runs
-the plotter 
-- make clean : Removes all object files and executables .
+- make all: Builds the entire program by creating the client and server executables
+- make server: Links the relevant object files to build the server executable in the server directory
+- make server.o: Complies the corresponding object
+- make dijkstra.o: Complies the corresponding object
+- make digraph.o: Complies the corresponding object
+- make client: Links the client object file to build the client executable in the client directory
+- make client.o: Complies the corresponding object
+- make clean: Removes all object files, executables and named pipes
 
 Running Instructions :
 1. Call make all from the terimal if running the file for the first time. As specifed in the assignment description, 
-the points to plot are specified in the file and the output must be redirected to the plotter. 
-The user must call the excutable ./client and then using proper pipleline to recieve input from the appropriate input file and
-redirect the output via the sockets to the server.cpp file.
-2. otherwise start by calling make clean and then make all after that all files and 
-executables should be called by the Makefile 
-3. Ensure the inpipe and the outpie have been removed before running the program again 
+the output must be redirected to the plotter. 
+2. The user must call the executable ./server [port] ./client [port] (with the required directory relocation), and then ./plotter to run the program
+3. Otherwise start by calling make clean (to ensure that the old pipes, objects and executables are removed) and then make all again
+4. If testing the error handling and timeout implementation of this program, run the program with the link_emulator with the following format in the command line: ./link_emulator [server port] [client port] [packet drop rate] [average delay]. Note, this executable needs to be run in a new terminal between the server and client ones.
 
 Notes and Assumptions : 
-The zip file contains the client directory, server directory, README, Makefile. plotter, link_emulator.In this part of the
+The zip file contains the client directory, server directory, README, Makefile. plotter, link_emulator. In this part of the
 assignment we made changes to the server.cpp and client.cpp in the server and client directories respectively. In the server.cpp, 
-we based our code off of echoserver.cpp to implement revceing and sending information from the socket.Futhermore, in client.cpp, 
-we implemented methods to receive the points from the plotter and then send it to the server.cpp by using sockets . Also, it is 
-important to note that we are the using original version of plotter relased. The program assumes that the point passed in by the plotter
-will have the correct format and type. 
+we based our code off of echoserver.cpp to implement revceing and sending information from the socket. Futhermore, in client.cpp, 
+we implemented methods to receive the points from the plotter (inpipe), then send it to server.cpp by using sockets, recieve the
+points from server and write them back to the plotter using outpipe. Also, it is important to note that we are the using original
+version of plotter released. We also handled the N = 1 case (eg. same start and end point).
+
+Finally, the program ensures that client and server send valid messages through the socket but assumes that the points passed in
+by the plotter will have the correct format and type. 

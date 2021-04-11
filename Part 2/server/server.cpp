@@ -228,12 +228,6 @@ int main(int argc, char* argv[]) {
 
         for (int v : path) {
           // acknowledgement
-          timer = {.tv_sec = 1, .tv_usec = 0}; 
-          if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
-            cerr << "Cannot set socket options!\n";
-            close(conn_socket_desc);
-            return 1;
-          }
           memset(echobuffer, '\0', sizeof echobuffer);
           int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
           if (rec_size == -1) {
@@ -254,17 +248,12 @@ int main(int argc, char* argv[]) {
           }
         }
 
+        // check if reset is necessary due to timeout or invalid message
         if (reset) {
           continue;
         }
         // final acknowledgement (if there were waypoints)
         if (path_size) {
-          timer = {.tv_sec = 1, .tv_usec = 0}; 
-          if (setsockopt(conn_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timer, sizeof(timer)) == -1) {
-            cerr << "Cannot set socket options!\n";
-            close(conn_socket_desc);
-            return 1;
-          }
           memset(echobuffer, '\0', sizeof echobuffer);
           int rec_size = recv(conn_socket_desc, echobuffer, BUFFER_SIZE, 0);
           if (rec_size == -1) {
